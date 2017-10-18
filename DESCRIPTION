@@ -5,7 +5,9 @@ Version: 0.1.0
 Author: DeclareDesign
 Maintainer: DeclareDesign <team@declaredesign.org>
 Description: TODO.
-Imports: shiny
+Imports: shiny,
+    DeclareDesign,
+    stringr
 Suggests: shinytest
 License: GPL-3
 Encoding: UTF-8

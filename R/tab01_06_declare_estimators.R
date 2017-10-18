@@ -1,4 +1,4 @@
-tab01_06_declare_estimators <- tabPanel("5. Declare Estimators",
+tab01_06_declare_estimators <- tabPanel("6. Declare Estimators",
          fixedPage( fixedRow(
            column(
              wellPanel(p("Characterize the estimator function: the procedure for generating estimates of quantities we want to learn about.")),

@@ -21,4 +21,4 @@ tab05_02_declare_potential_outcomes <- tabPanel("2. Declare Potential Outcomes",
              plotOutput("po_plot_impl")
            )
          )
-),
+)

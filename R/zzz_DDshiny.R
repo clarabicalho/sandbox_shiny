@@ -1,6 +1,6 @@
 #' DDshiny wizard
 #' @export
-DDshiny <- shinyApp(ui, server)
+DDshiny_legacy <- shinyApp(ui, server)
 
 #' @export
-DDshiny2 <- shinyApp(ui2, server2)
+DDwizard <- shinyApp(ui2, server2)

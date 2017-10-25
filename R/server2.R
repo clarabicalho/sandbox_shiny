@@ -67,22 +67,24 @@ server2 <- function(input, output, clientData, session) {
       p <- input$prob_assign
       ret <- declare_assignment(prob=p)
     } else if(input$assignment_input_type == 'Custom'){
-      # estimand_text <- input$potential_outcomes_formula
-      # e <- parse(text=estimand_text)[[1]]
-      #
-      # eval(call("declare_estimand",ATE=e))
+      assignment_text <- input$custom_assignment_function
+      ret <- eval(parse(text=assignment_text)[[1]])
     }
     ret
   })
 
   current_estimator <- reactive({
     estimand <- current_estimand()
+    estimator <- input$estimator
 
-    if(input$estimator == 'estimator_lm'){
+    if(estimator == 'estimator_lm'){
       ret <- declare_estimator(formula=Y~Z, model=lm, estimand=estimand)
     }
-    else if(input$estimator == 'estimator_dim'){
+    else if(estimator == 'estimator_d_i_m'){
       ret <- declare_estimator(formula=Y~Z, model=estimatr::difference_in_means, estimand=estimand)
+    }
+    else {
+      warning('Should be impossible !?')
     }
     ret
   })

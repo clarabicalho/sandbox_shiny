@@ -36,22 +36,27 @@ server2 <- function(input, output, clientData, session) {
     declare_sampling(n=n)
   })
 
+  simple_estimand <- list(
+    population=declare_estimand(ATE=mean(Y_Z_1 - Y_Z_0)),
+    sample=declare_estimand(ATE_s=mean(Y_Z_1 - Y_Z_0))
+  )
+
+  custom_estimand <- reactive({
+    ret <- tryCatch({
+    estimand_text <- input$estimand_text
+    e <- parse(text=estimand_text)[[1]]
+
+    ret <- eval(call("declare_estimand",Custom=e))
+    }, error=function(e) data.frame()) # returning noop estimand
+    ret
+  })
 
   current_estimand <- reactive({
-    if(input$po_input_type == 'Simple'){
-      if(input$estimand_type == 'population'){
-        ret <- declare_estimand(ATE=mean(Y_Z_1 - Y_Z_0))
-      } else if(input$estimand_type == 'sample'){
-        ret <- declare_estimand(ATE=mean(Y_Z_1 - Y_Z_0),subset=S==1)
-      } else {
-        warning('should be impossible')
-        NULL
-      }
-    } else if(input$po_input_type == 'Custom'){
-      estimand_text <- input$potential_outcomes_formula
-      e <- parse(text=estimand_text)[[1]]
-
-      ret <- eval(call("declare_estimand",ATE=e))
+    if(input$estimand_input_type == 'Simple'){
+      if(!input$estimand_type %in% names(simple_estimand)) warning('invalid simple estimand selected !?')
+      ret <- simple_estimand[[input$estimand_type]]
+    } else if(input$estimand_input_type == 'Custom'){
+      ret <- custom_estimand()
     }
     ret
   })
@@ -74,23 +79,30 @@ server2 <- function(input, output, clientData, session) {
     estimand <- current_estimand()
 
     if(input$estimator == 'estimator_lm'){
-      ret <- declare_estimator(formula=Y~Z, model=estimatr::difference_in_means, estimand=estimand)
+      ret <- declare_estimator(formula=Y~Z, model=lm, estimand=estimand)
     }
     else if(input$estimator == 'estimator_dim'){
-      ret <- declare_estimator(formula=Y~Z, model=estimatr::lm_robust, estimand=estimand)
+      ret <- declare_estimator(formula=Y~Z, model=estimatr::difference_in_means, estimand=estimand)
     }
     ret
   })
 
   current_design <-reactive({
+
+    estimand <- current_estimand()
+    custom <- if(!any(vapply(simple_estimand, identical, TRUE, estimand))) estimand else NULL
+
     args <- list(population=current_population(),
                  potential_outcome=current_potential_outcome(),
+                 pop_estimand=simple_estimand$population,
                  sampling=current_sampling(),
-                 estimand=current_estimand(),
+                 sam_estimand=simple_estimand$sample,
+                 custom_estimand=custom,
                  assignment=current_assignment(),
                  reveal=reveal_outcomes,
                  estimator=current_estimator()
     )
+    args <- Filter(is.function, args)
 
     do.call(declare_design, args)
   })

@@ -16,10 +16,10 @@ server2 <- function(input, output, clientData, session) {
   current_potential_outcome <- reactive({
     if(input$po_input_type == 'Simple'){
       po_treat_mean <- input$po_treat_mean
-      po_control_mean <- input$po_treat_mean
+      po_control_mean <- input$po_control_mean
 
-      ret <- declare_potential_outcomes(Y_Z_0=rnorm(N, po_treat_mean),
-                                 Y_Z_1=rnorm(N, po_control_mean))
+      ret <- declare_potential_outcomes(Y_Z_0=rnorm(N, po_control_mean),
+                                 Y_Z_1=rnorm(N, po_treat_mean))
 
     } else if(input$po_input_type == 'Custom'){
       potential_outcomes_formula <- as.formula(input$potential_outcomes_formula)
@@ -140,6 +140,31 @@ server2 <- function(input, output, clientData, session) {
   output[['quick_diagnosis6']] <- quick_tbl
 
 
+  output[['po_plot']] <- renderPlot({
+    require(ggplot2)
+    pop <- current_population()
+    poutcome <- current_potential_outcome()
+
+    ggplot(poutcome(pop())) +
+      stat_density(aes(x=Y_Z_0), fill=1, alpha=.7) +
+      stat_density(aes(x=Y_Z_1), fill=2, alpha=.7)
+  })
+
+  output[['estimand_table']] <- renderPrint({
+    # estimand_data <- if(input$estimand_type == "population")
+    #   current_population_data()
+    # else
+    #   current_sample_data()
+    df <- get_estimands(current_design())
+    round_df(df, 3)
+  })
+
+
+  output[['treatment_table']] <- renderDataTable({
+    tab <- data.frame(table(draw_data(current_design())$Z))
+    names(tab) <- c("Condition name", "Frequency")
+    tab
+  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
 
 }

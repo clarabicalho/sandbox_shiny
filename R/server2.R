@@ -167,4 +167,29 @@ server2 <- function(input, output, clientData, session) {
   }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
 
+  ### Tab 02 - download sample
+
+  current_sample_data <- reactive({
+
+    draw_data(current_design())
+  })
+
+  output[['current_sample_data_table']] <- renderDataTable({
+    tab <- data.frame(table(current_sample_data()$Z))
+    names(tab) <- c("Condition name", "Frequency")
+    tab
+  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+  output[['downloadData']] <- downloadHandler(
+    filename = 'declaredesign_data_draw.csv',
+    content = function(file) {
+      write.csv(current_sample_data(), file)
+    },
+    contentType='text/csv'
+  )
+
+
+
+
+
 }

@@ -112,7 +112,7 @@ server2 <- function(input, output, clientData, session) {
   current_diagnosis <- reactive({
     design <- current_design()
     # diagnosands <- declare_diagnosands()
-    diagnose_design(design, sims=5, bootstrap_sims = 5, parallel = FALSE)
+    diagnose_design(design, sims=input$population_draws, bootstrap_sims = input$sample_draws, parallel = FALSE)
 
 
   })
@@ -188,6 +188,15 @@ server2 <- function(input, output, clientData, session) {
     contentType='text/csv'
   )
 
+  #### Tab 3 Diagnosis
+
+  output[['diagnosis_table']] <- renderDataTable({
+    diag_tab <- current_diagnosis()
+    diag_tab <- get_diagnosands(diagnosis = diag_tab)
+    # rownames(diag_tab) <- diag_tab$estimand_label
+    diag_tab <- round_df(diag_tab, 4)
+    diag_tab
+  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
 
 

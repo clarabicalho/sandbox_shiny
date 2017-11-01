@@ -24,3 +24,28 @@ terms of potential outcomes.")),
            )
          ))
 )
+
+simple_estimand <- list(
+  population=declare_estimand(ATE=mean(Y_Z_1 - Y_Z_0)),
+  sample=declare_estimand(ATE_s=mean(Y_Z_1 - Y_Z_0))
+)
+
+
+tab01_custom_estimand <- function(estimand_text){
+  ret <- tryCatch({
+    e <- parse(text=estimand_text)[[1]]
+
+    ret <- eval(call("declare_estimand",Custom=e))
+  }, error=function(e) data.frame()) # returning noop estimand
+  structure(ret, custom=TRUE)
+}
+
+tab01_current_estimand <- function(estimand_input_type, estimand_type, estimand_text){
+  if(estimand_input_type == 'Simple'){
+    if(!estimand_type %in% names(simple_estimand)) warning('invalid simple estimand selected !?')
+    ret <- simple_estimand[[estimand_type]]
+  } else if(estimand_input_type == 'Custom'){
+    ret <- tab01_custom_estimand(estimand_text)
+  }
+  ret
+}

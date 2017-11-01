@@ -10,3 +10,11 @@ tab06_comparison <-
          ),
          fluidRow( dataTableOutput("diagnosis_table_compare") )
   )
+
+tab06_make_diagnosis_comparison <- function(current_diagnosis, current_diagnosis_impl){
+  diag_tab <- round_df(rbind(current_diagnosis$diagnosands, current_diagnosis_impl$diagnosands), 4)
+  diag_tab <- cbind(colnames(diag_tab), t(diag_tab))
+  colnames(diag_tab) <- c("","Registered", "Implemented")
+  diag_tab
+}
+

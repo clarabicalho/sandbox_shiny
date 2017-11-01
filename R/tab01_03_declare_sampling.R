@@ -9,3 +9,7 @@ tab01_03_declare_sampling <- tabPanel("3. Declare Sampling",
                            dataTableOutput("quick_diagnosis3")
                     )))
 )
+
+tab01_make_sampling <- function(n){
+  declare_sampling(n=n)
+}

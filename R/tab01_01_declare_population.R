@@ -15,3 +15,8 @@ tab01_01_declare_population <-
                               dataTableOutput("quick_diagnosis1") )
                        ))
             )
+
+
+tab01_make_population <- function(N, cov_name, cov_mean, cov_sd) {
+    declare_population(N=N, noise=rnorm(N, 0, 1)  )
+}

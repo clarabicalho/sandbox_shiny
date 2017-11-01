@@ -1,7 +1,9 @@
 tab05_02_declare_potential_outcomes <- tabPanel("2. Declare Potential Outcomes",
          fluidRow(sidebarPanel(
-           "The potential outcomes formula was declared as", textOutput("potential_outcomes_formula", inline = T), ". The condition names were declared as",
-           textOutput("condition_names", inline = T), ". The assignment variable name was declared as", textOutput("assignment_variable_name", inline = T)
+           "The potential outcomes formula was declared as",
+           textOutput("potential_outcomes_formula", inline = TRUE), ". The condition names were declared as",
+           textOutput("condition_names", inline = TRUE), ". The assignment variable name was declared as",
+           textOutput("assignment_variable_name", inline = TRUE)
          )),
          splitLayout(
            sidebarPanel(

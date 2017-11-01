@@ -25,3 +25,27 @@ tab01_02_declare_potential_outcomes <- tabPanel("2. Declare Potential Outcomes",
              )
            ))
 )
+
+
+tab01_make_potential_outcome <- function(po_input_type, po_treat_mean, po_control_mean, potential_outcomes_formula, condition_names, assignment_variable_name){
+  if(po_input_type == 'Simple'){
+
+    ret <- declare_potential_outcomes(Y_Z_0=rnorm(N, po_control_mean),
+                                      Y_Z_1=rnorm(N, po_treat_mean))
+
+  } else if(po_input_type == 'Custom'){
+    potential_outcomes_formula <- as.formula(potential_outcomes_formula)
+    ret <- declare_potential_outcomes(formula=formula, condition_names=condition_names, assignment_variable_name=assignment_variable_name)
+  }
+  ret
+}
+
+tab01_make_po_plot <- function(pop, poutcome)
+{
+  require(ggplot2)
+
+  ggplot(poutcome(pop())) +
+    stat_density(aes(x=Y_Z_0), fill=1, alpha=.7) +
+    stat_density(aes(x=Y_Z_1), fill=2, alpha=.7)
+}
+

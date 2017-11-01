@@ -1,121 +1,35 @@
 server2 <- function(input, output, clientData, session) {
 
 
-  current_population <- reactive({
-    N <- input$N
+  current_population <- reactive(tab01_make_population(input$N, input$cov_name, input$cov_mean, input$cov_sd))
 
-    #TODO covariates
-    cov_name <- input$cov_name
-    cov_mean <- input$cov_mean
-    cov_sd  <- input$cov_sd
-
-    declare_population(N=N, noise=rnorm(N, 0, 1)   )
-
-  })
-
-  current_potential_outcome <- reactive({
-    if(input$po_input_type == 'Simple'){
-      po_treat_mean <- input$po_treat_mean
-      po_control_mean <- input$po_control_mean
-
-      ret <- declare_potential_outcomes(Y_Z_0=rnorm(N, po_control_mean),
-                                 Y_Z_1=rnorm(N, po_treat_mean))
-
-    } else if(input$po_input_type == 'Custom'){
-      potential_outcomes_formula <- as.formula(input$potential_outcomes_formula)
-      condition_names <- input$condition_names
-      assignment_variable_name <- input$assignment_variable_name
-
-      ret <- declare_potential_outcomes(formula=formula, condition_names=condition_names, assignment_variable_name=assignment_variable_name)
-    }
-    ret
-  })
-
-  current_sampling <- reactive({
-    n <- input$n
-    declare_sampling(n=n)
-  })
-
-  simple_estimand <- list(
-    population=declare_estimand(ATE=mean(Y_Z_1 - Y_Z_0)),
-    sample=declare_estimand(ATE_s=mean(Y_Z_1 - Y_Z_0))
-  )
-
-  custom_estimand <- reactive({
-    ret <- tryCatch({
-    estimand_text <- input$estimand_text
-    e <- parse(text=estimand_text)[[1]]
-
-    ret <- eval(call("declare_estimand",Custom=e))
-    }, error=function(e) data.frame()) # returning noop estimand
-    ret
-  })
-
-  current_estimand <- reactive({
-    if(input$estimand_input_type == 'Simple'){
-      if(!input$estimand_type %in% names(simple_estimand)) warning('invalid simple estimand selected !?')
-      ret <- simple_estimand[[input$estimand_type]]
-    } else if(input$estimand_input_type == 'Custom'){
-      ret <- custom_estimand()
-    }
-    ret
-  })
-
-  current_assignment <- reactive({
-
-    if(input$assignment_input_type == 'Simple'){
-      p <- input$prob_assign
-      ret <- declare_assignment(prob=p)
-    } else if(input$assignment_input_type == 'Custom'){
-      assignment_text <- input$custom_assignment_function
-      ret <- eval(parse(text=assignment_text)[[1]])
-    }
-    ret
-  })
-
-  current_estimator <- reactive({
-    estimand <- current_estimand()
-    estimator <- input$estimator
-
-    if(estimator == 'estimator_lm'){
-      ret <- declare_estimator(formula=Y~Z, model=lm, estimand=estimand)
-    }
-    else if(estimator == 'estimator_d_i_m'){
-      ret <- declare_estimator(formula=Y~Z, model=estimatr::difference_in_means, estimand=estimand)
-    }
-    else {
-      warning('Should be impossible !?')
-    }
-    ret
-  })
-
-  current_design <-reactive({
-
-    estimand <- current_estimand()
-    custom <- if(!any(vapply(simple_estimand, identical, TRUE, estimand))) estimand else NULL
-
-    args <- list(population=current_population(),
-                 potential_outcome=current_potential_outcome(),
-                 pop_estimand=simple_estimand$population,
-                 sampling=current_sampling(),
-                 sam_estimand=simple_estimand$sample,
-                 custom_estimand=custom,
-                 assignment=current_assignment(),
-                 reveal=reveal_outcomes,
-                 estimator=current_estimator()
-    )
-    args <- Filter(is.function, args)
-
-    do.call(declare_design, args)
-  })
-
-  current_diagnosis <- reactive({
-    design <- current_design()
-    # diagnosands <- declare_diagnosands()
-    diagnose_design(design, sims=input$population_draws, bootstrap_sims = input$sample_draws, parallel = FALSE)
+  current_potential_outcome <- reactive(tab01_make_potential_outcome(input$po_input_type,
+                                                                     input$po_treat_mean,
+                                                                     input$po_control_mean,
+                                                                     input$potential_outcomes_formula,
+                                                                     input$condition_names,
+                                                                     input$assignment_variable_name))
 
 
-  })
+  current_sampling <- reactive(tab01_make_sampling(input$n))
+
+
+  current_estimand <- reactive(tab01_current_estimand(input$estimand_input_type, input$estimand_type, input$estimand_text))
+
+  current_assignment <- reactive(tab01_make_assignment(input$assignment_input_type, input$prob_assign, input$custom_assignment_function))
+
+  current_estimator <- reactive(tab01_make_estimator(current_estimand(), input$estimator))
+
+  current_design <-reactive(tab01_make_design(current_estimand(),
+                                              current_population(),
+                                              current_potential_outcome(),
+                                              current_sampling(),
+                                              current_assignment(),
+                                              current_estimator()
+                                              ))
+
+
+  current_diagnosis <- reactive(tab01_make_diagnosis(current_design(), input$population_draws, input$sample_draws))
 
 
   quick_tbl <- renderDataTable({
@@ -140,31 +54,19 @@ server2 <- function(input, output, clientData, session) {
   output[['quick_diagnosis6']] <- quick_tbl
 
 
-  output[['po_plot']] <- renderPlot({
-    require(ggplot2)
-    pop <- current_population()
-    poutcome <- current_potential_outcome()
+  output[['po_plot']] <- renderPlot(tab01_make_po_plot(current_population(), current_potential_outcome()))
 
-    ggplot(poutcome(pop())) +
-      stat_density(aes(x=Y_Z_0), fill=1, alpha=.7) +
-      stat_density(aes(x=Y_Z_1), fill=2, alpha=.7)
-  })
 
   output[['estimand_table']] <- renderPrint({
-    # estimand_data <- if(input$estimand_type == "population")
-    #   current_population_data()
-    # else
-    #   current_sample_data()
-    df <- get_estimands(current_design())
-    round_df(df, 3)
+    round_df(get_estimands(current_design()), 3)
   })
 
 
-  output[['treatment_table']] <- renderDataTable({
-    tab <- data.frame(table(draw_data(current_design())$Z))
-    names(tab) <- c("Condition name", "Frequency")
-    tab
-  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+  output[['treatment_table']] <- renderDataTable(tab01_make_treatment_table(current_design()),
+                                                 options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+  output[["estimates_table"]] <- renderDataTable(tab01_make_estimator_table(current_design()),
+                                                 options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
 
   ### Tab 02 - download sample
@@ -197,6 +99,115 @@ server2 <- function(input, output, clientData, session) {
     diag_tab <- round_df(diag_tab, 4)
     diag_tab
   }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+  ### Tab 4 - Register - TBD
+
+  ### Tab 5 - Implementation
+
+  # Print inputs for the comparison -----------------------------------------
+
+  output$N <- renderText({
+    print(input$N)
+  })
+
+  output$prob_assign <- renderText({
+    print(input$prob_assign)
+  })
+
+  output$estimator <- renderText({
+    print(input$estimator)
+  })
+
+  output$estimator <- renderText({
+    if(input$estimator == "estimator_lm")
+      print("The estimator declared was linear regression")
+    else
+      print("The estimator declared was difference-in-means")
+  })
+
+  output$potential_outcomes_formula <- renderText({
+    print(input$potential_outcomes_formula)
+  })
+
+  output$condition_names <- renderText({
+    print(input$condition_names)
+  })
+
+  output$assignment_variable_name <- renderText({
+    print(input$assignment_variable_name)
+  })
+
+  output$n <- renderText({
+    print(paste0("The chosen sample size was ", input$n))
+  })
+
+  output$assignment_summary <- renderText({
+    if(input$assignment_input_type == "simple")
+      print(paste("The declared probability of assignment was", input$prob_assign))
+    else
+      print(paste("A custom assignment function was declared."))
+  })
+
+  output$estimand_chosen <- renderText({
+    if(input$estimand_input_type == "simple")
+      print(paste("A simple estimand was chosen: ", input$estimand_type))
+    else
+      print(paste("A custom estimand was chosen: ", input$estimand_text))
+  })
+
+
+
+
+  ## 5.2
+
+  current_population_impl <- reactive({tab01_make_population(input$N_impl, input$cov_name_impl, input$cov_mean_impl, input$cov_sd_impl)})
+
+  current_potential_outcome_impl <- reactive(tab01_make_potential_outcome(input$po_input_type_impl,
+                                                                     input$po_treat_mean_impl,
+                                                                     input$po_control_mean_impl,
+                                                                     input$potential_outcomes_formula_impl,
+                                                                     input$condition_names_impl,
+                                                                     input$assignment_variable_name_impl))
+
+
+  current_sampling_impl <- reactive(tab01_make_sampling(input$n_impl))
+
+  current_estimand_impl <- reactive(tab01_current_estimand(input$estimand_input_type_impl, input$estimand_type_impl, input$estimand_text_impl))
+
+  current_assignment_impl <- reactive(tab01_make_assignment(input$assignment_input_type_impl, input$prob_assign_impl, input$custom_assignment_function_impl))
+
+
+  current_estimator_impl <- reactive(tab01_make_estimator(current_estimand(), input$estimator))
+
+
+  current_design_impl <-reactive(tab01_make_design( current_estimand_impl(),
+                                                    current_population_impl(),
+                                                    current_potential_outcome_impl(),
+                                                    current_sampling_impl(),
+                                                    current_assignment_impl(),
+                                                    current_estimator_impl()
+        ))
+
+  current_diagnosis_impl <- reactive(tab01_make_diagnosis(current_design_impl(), input$population_draws_compare, input$sample_draws_compare))
+
+
+  output[['po_plot_impl']] <- renderPlot(tab01_make_po_plot(current_population_impl(), current_potential_outcome_impl()))
+
+  output[['estimand_table_impl']] <- renderPrint({
+    round_df(get_estimands(current_design_impl()), 3)
+  })
+
+  output[['treatment_table_impl']] <- renderDataTable(tab01_make_treatment_table(current_design_impl()),
+                                                 options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+
+
+  output[["estimates_table_impl"]] <- renderDataTable(tab01_make_estimator_table(current_design_impl()))
+
+  ####tab 6 comparison
+
+  output$diagnosis_table_compare <- renderDataTable(tab06_make_diagnosis_comparison(current_diagnosis(), current_diagnosis_impl())
+    , options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
 
 

@@ -22,3 +22,19 @@ tab01_05_declare_assignment <- tabPanel("5. Declare Assignment",
            )
          ))
 )
+
+tab01_make_assignment <- function(assignment_input_type, prob_assign, custom_assignment_function){
+
+  if(assignment_input_type == 'Simple'){
+    ret <- declare_assignment(prob=prob_assign)
+  } else if(assignment_input_type == 'Custom'){
+    ret <- eval(parse(text=custom_assignment_function)[[1]])
+  }
+  ret
+}
+
+tab01_make_treatment_table <- function(current_design){
+  tab <- data.frame(table(draw_data(current_design)$Z))
+  names(tab) <- c("Condition name", "Frequency")
+  tab
+}

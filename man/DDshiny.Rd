@@ -2,7 +2,7 @@
 % Please edit documentation in R/namespace.R
 \name{DDshiny}
 \alias{DDshiny}
-\title{DeclareDesign Wizard}
+\title{DeclareDesign shiny applications}
 \description{
-DeclareDesign Wizard
+DeclareDesign shiny applications
 }

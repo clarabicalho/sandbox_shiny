@@ -6,7 +6,7 @@ Author: DeclareDesign
 Maintainer: DeclareDesign <team@declaredesign.org>
 Description: TODO.
 Imports: shiny,
-    DeclareDesign,
+    DeclareDesign (>= 1.1.0),
     stringr
 Suggests: shinytest
 License: GPL-3

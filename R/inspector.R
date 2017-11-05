@@ -1,43 +1,6 @@
-welcome <- shinymaterial:::create_material_object(
-  js_file =
-    "shiny-material-modal.js",
-  material_tag_list =
-    shiny::tagList(
-      # shiny::tags$div(
-      #   class = "fixed-action-btn",
-      #   shiny::tags$button(
-      #     `data-target` = "welcome-modal",
-      #     class = "btn",
-      #     style = "",
-      #     icon_tag = NULL,
-      #       "button_text"
-      #   )
-      # ),
-      shiny::tags$div(
-        id = "welcome_modal",
-        class = "modal",
-        shiny::tags$div(
-          class = "modal-content",
-          shiny::tags$h4("title"),
-          "content"
-        ),
-        shiny::tags$div(
-          class = "modal-footer",
-          shiny::tags$a(
-            href = "javascript:void(0)",
-            class = "modal-action modal-close waves-effect waves-green btn-flat",
-            "Close"
-          )
-        )
-      )
-    )
-)
 
-make_modal_trigger <- function(btn, what) {
-  btn[[2]][[1]]$attribs[["data-target"]] <- what; 
-  btn[[2]][[1]]$attribs$class <- paste(btn[[2]][[1]]$attribs$class, "modal-trigger")
-  btn
-}
+
+
 
 welcome <-         material_modal(
   modal_id = "welcome_modal",
@@ -58,7 +21,7 @@ welcome[[2]][[1]]$children[[1]]$attribs$style="box-shadow:none; border:none;"
 #'
 inspector.ui <- material_page(
   title = "Design Inspector",
-  nav_bar_color = "blue accent-4",
+  nav_bar_color = nav_bar_color,
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
@@ -75,9 +38,17 @@ inspector.ui <- material_page(
         "Design Parameters",
         material_text_box("d_N", "N:"),
         material_text_box("d_n", "n:"),
-        material_text_box("d_p", "p:"),
-        material_button("RUN", "Run Design")
-      )
+        material_text_box("d_p", "p:")
+      ),
+      material_card(
+        "Diagnostic Parameters",
+        material_text_box("d_Sims", "Num of Simulations:"),
+        material_text_box("d_draws", "Num of Draws (per Simulation):")
+        # material_button("RUN", "Run Design")
+      ),
+      material_button("run", "Run Design"),
+      material_button("export", "Export...")
+      
     ),
     material_column(
       width = 8,
@@ -85,8 +56,7 @@ inspector.ui <- material_page(
       material_card("Output",
       bsCollapse(id="outputCollapse", open="Summary",
         bsCollapsePanel("Summary", "The summary"),
-        bsCollapsePanel("Diagnostics", "The diagnostics"),
-        bsCollapsePanel("Export", "export here")
+        bsCollapsePanel("Diagnostics", "The diagnostics")
       )
       # shiny::tags$h1("Output2")
       )
@@ -112,4 +82,4 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 DDinspector <- shinyApp(inspector.ui, inspector.server)
-DDinspector
+# DDinspector

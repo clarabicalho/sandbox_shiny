@@ -1,4 +1,4 @@
-server2 <- function(input, output, clientData, session) {
+wizard.server2 <- function(input, output, clientData, session) {
 
 
   current_population <- reactive(tab01_make_population(input$N, input$cov_name, input$cov_mean, input$cov_sd))

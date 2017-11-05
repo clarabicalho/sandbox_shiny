@@ -1,4 +1,4 @@
-ui2 <- fluidPage(theme = "cerulean",
+wizard.ui2 <- fluidPage(theme = "cerulean",
                 navbarPage(
                   "DeclareDesign DEMO",
                   tab01_characterize,

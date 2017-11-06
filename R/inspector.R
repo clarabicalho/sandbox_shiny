@@ -1,6 +1,12 @@
 require(shiny); require(shinyBS); require(shinymaterial);
 
 
+my_tipify <- function(txtbox, tip){
+  txtbox[[2]]$class <- paste(txtbox[[2]]$class, "tooltipped")
+  txtbox[[2]][["data-tooltip"]] <- tip
+  txtbox
+}
+
 welcome <-         material_modal(
   modal_id = "welcome_modal",
   button_text = "Modal",
@@ -58,6 +64,14 @@ inspector.ui <- material_page(
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
+  withMathJax(),
+  #TODO This is a super gross way of getting the tooltips to update correctly.
+  refresh_tips <- shiny::tags$script("
+        setInterval(function(){
+              console.log('HIARYLAH');
+              $('.tooltipped').tooltip({delay: 50});
+        }, 20*1000);
+    "),
   welcome,
   material_row(
     material_column(
@@ -65,8 +79,8 @@ inspector.ui <- material_page(
       uiOutput("designParamaters"),
       material_card(
         "Diagnostic Parameters",
-        textInput("d_Sims", "Num of Simulations:", 20),
-        textInput("d_draws", "Num of Draws (per Simulation):", 50)
+        my_tipify(textInput("d_Sims", "Num of Sims:", 20), "The number of simulated populations are created."),
+        my_tipify(textInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation.")
         # material_button("RUN", "Run Design")
       ),
       actionButton("run", "Run Design"),
@@ -102,9 +116,15 @@ inspector.server <- function(input, output, clientData, session) {
     f <- names(formals(design_fn))
     v <- as.list(formals(design_fn))
 
-    boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE)
+    boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
-    names(boxes) <- NULL
+
+    if(length(attr(design_fn, "tips")) == length(f)){
+      for(i in seq_along(f)){
+        boxes[[i]] <- my_tipify(boxes[[i]], attr(design_fn, "tips")[i])
+      }
+    }
+
 
 
     output$designParamaters <- renderUI(
@@ -175,6 +195,7 @@ inspector.server <- function(input, output, clientData, session) {
     ), simplify = FALSE)
     a
   })
+
 }
 
 

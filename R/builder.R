@@ -6,7 +6,7 @@ builder.ui <- material_page(
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
-  
+
   material_row(
     material_column(
       width=4,
@@ -26,16 +26,13 @@ builder.ui <- material_page(
       material_card("Design Output",
       bsCollapse(id="outputCollapse", open="Summary",
                  bsCollapsePanel("Summary", "The summary"),
-                 bsCollapsePanel("Citation", "Citation"),
-                 bsCollapsePanel("Code", "Code"),
-                 bsCollapsePanel("Simulate", "Simulation"),
-                 bsCollapsePanel("Quick Diagnosis ", "Diagnosis", 
+                 bsCollapsePanel("Quick Diagnosis ", "Diagnosis",
                                  paste("Number of simulations: 5"),
                                  paste("Number of draws: 10"))
                  # bsCollapsePanel("Export", "export here")
       )
       )
-      
+
       # shiny::tags$h1("Output2")
     )
   )
@@ -57,4 +54,4 @@ builder.server <- function(input, output, clientData, session) {
 
 
 DDbuilder <- shinyApp(builder.ui, builder.server)
-# DDbuilder
+DDbuilder

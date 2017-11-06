@@ -1,5 +1,4 @@
-
-
+require(shiny); require(shinyBS); require(shinymaterial);
 
 
 welcome <-         material_modal(
@@ -7,14 +6,48 @@ welcome <-         material_modal(
   button_text = "Modal",
   title = "Welcome",
   button_color = "red lighten-3",
-  # material_dropdown("import_prerolled", "Import from library", c("Two Arm"="", "p Arms"="","Two Way Factorial"="")),
   material_button("import_library", "Import from library..."),
   material_button("import_file", "Import from file..."),
-  material_button("import_url", "Import from url...")
+  material_button("import_url", "Import from url..."),
+  uiOutput(outputId = "import_panel_choice", inline=FALSE)
 )
-welcome[[2]][[1]] <- NULL# skip making button
+welcome[[2]][[1]] <- NULL# skip making outer button
+closebutton <- welcome[[2]][[1]]$children[[2]] # save close button for latter
 welcome[[2]][[1]]$children[[2]] <- NULL # skip close button in modal dialog
 welcome[[2]][[1]]$children[[1]]$attribs$style="box-shadow:none; border:none;"
+welcome[[3]] <-   shiny::tags$script("
+     $(document).ready(function(){
+      $('#welcome_modal').modal('open');
+     });")
+welcome[[4]] <- uiOutput("window_closer")
+
+welcome_closer <- shiny::tags$script("
+     $(document).ready(function(){
+      $('#welcome_modal').modal('close');
+     });
+                                    ")
+
+importLibrary <- material_card("Import from Library",
+  material_radio_button("import_library_dropdown", "Library:",
+                    c("Two Arm"="two_arm", "p Arms"="p_arms","Two Way Factorial"="two_fac")
+                    ),
+  actionButton("import_button", "Import")
+)
+
+importFile <- material_card("Import from File",
+                            fileInput("import_file1", "Choose RDS File",
+                                      accept = ".RDS"
+                            ),
+                            # uiOutput("import_button", "Import")
+                            actionButton("import_button", "Import")
+)
+
+
+importUrl <- material_card("Import from URL",
+                           material_text_box("import_url_txt", "URL"),
+                           actionButton("import_button", "Import")
+)
+
 
 #' @import shinymaterial
 #' @import shinyBS
@@ -26,11 +59,6 @@ inspector.ui <- material_page(
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
   welcome,
-  shiny::tags$script("
-     $(document).ready(function(){
-      $('#welcome_modal').modal('open');
-     });
-                     "),
   material_row(
     material_column(
       width = 4,
@@ -48,15 +76,18 @@ inspector.ui <- material_page(
       ),
       material_button("run", "Run Design"),
       material_button("export", "Export...")
-      
+
     ),
     material_column(
       width = 8,
       # offset=6,
       material_card("Output",
       bsCollapse(id="outputCollapse", open="Summary",
-        bsCollapsePanel("Summary", "The summary"),
-        bsCollapsePanel("Diagnostics", "The diagnostics")
+        bsCollapsePanel("Summary", uiOutput("summaryPanel")),
+        bsCollapsePanel("Citation", uiOutput("citationPanel")),
+        bsCollapsePanel("Diagnostics", uiOutput("diagnosticsPanel")),
+        bsCollapsePanel("Code", uiOutput("codePanel")),
+        bsCollapsePanel("Simulate", uiOutput("simulationPanel"))
       )
       # shiny::tags$h1("Output2")
       )
@@ -67,7 +98,55 @@ inspector.ui <- material_page(
 
 
 inspector.server <- function(input, output, clientData, session) {
-  
+
+  DD <-   reactiveValues(design = NULL, lib= NULL, filename=NULL, url=NULL, done=FALSE)
+
+
+  loadDesign <- function() 1
+
+  observeEvent(input$import_library, output$import_panel_choice <- renderUI(importLibrary), ignoreInit = TRUE)
+  observeEvent(input$import_url,     output$import_panel_choice <- renderUI(importUrl),     ignoreInit = TRUE)
+  observeEvent(input$import_file,    {
+    output$import_panel_choice <- renderUI(importFile)
+
+
+
+
+
+
+    },    ignoreInit = TRUE)
+
+
+  observeEvent(input$import_button, {
+    # req(input$import_file_button)
+    message("***!\n\t", input$import_button, "\n****")
+    if(!is.null(isolate(DD$design)))
+      output$window_closer <- renderUI(welcome_closer)
+  }, ignoreNULL = FALSE)
+
+
+
+
+
+  observeEvent(input$import_file1, {
+    DD$design <- readRDS(input$import_file1$datapath)
+    str(DD$design)
+    }, ignoreNULL = TRUE)
+
+
+
+
+
+#
+#   output$window_closer <- renderUI({
+#     if(isolate(DD$done))
+#       welcome_closer
+#     })
+
+
+
+
+
   output$cards <- renderUI({
     a <- replicate(6, material_card(
       title = "Example Card",
@@ -82,4 +161,4 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 DDinspector <- shinyApp(inspector.ui, inspector.server)
-# DDinspector
+DDinspector

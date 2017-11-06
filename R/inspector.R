@@ -1,5 +1,5 @@
-require(shiny); require(shinyBS); require(shinymaterial);
-
+require(shiny); require(shinyBS); require(shinymaterial); require(DeclareDesign)
+round_df <- DDshiny:::round_df
 
 my_tipify <- function(txtbox, tip){
   txtbox[[2]]$class <- paste(txtbox[[2]]$class, "tooltipped")
@@ -79,7 +79,7 @@ inspector.ui <- material_page(
       uiOutput("designParamaters"),
       material_card(
         "Diagnostic Parameters",
-        my_tipify(textInput("d_Sims", "Num of Sims:", 20), "The number of simulated populations are created."),
+        my_tipify(textInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
         my_tipify(textInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation.")
         # material_button("RUN", "Run Design")
       ),
@@ -92,11 +92,11 @@ inspector.ui <- material_page(
       # offset=6,
       material_card("Output",
       bsCollapse(id="outputCollapse", open="Summary",
-        bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-        bsCollapsePanel("Citation", uiOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", uiOutput("diagnosticsPanel")),
-        bsCollapsePanel("Code", uiOutput("codePanel")),
-        bsCollapsePanel("Simulate", uiOutput("simulationPanel"))
+        bsCollapsePanel("Summary", verbatimTextOutput("summaryPanel")),
+        bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
+        bsCollapsePanel("Diagnostics", dataTableOutput("diagnosticsPanel")),
+        bsCollapsePanel("Code", verbatimTextOutput("codePanel")),
+        bsCollapsePanel("Simulate", dataTableOutput("simulationPanel"))
       )
       # shiny::tags$h1("Output2")
       )
@@ -108,11 +108,14 @@ inspector.ui <- material_page(
 
 inspector.server <- function(input, output, clientData, session) {
 
-  DD <-   reactiveValues(design = NULL)
+  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL)
 
 
-  loadDesign <- function(output, design_fn) {
 
+  output$designParamaters <- renderUI({
+  # loadDesign <- function(output, design_fn) {
+
+    design_fn <- req(DD$design)
     f <- names(formals(design_fn))
     v <- as.list(formals(design_fn))
 
@@ -127,18 +130,9 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-    output$designParamaters <- renderUI(
-      do.call(material_card, c(title="Design Parameters", boxes))
-    )
-#
-#     material_card(
-#       "Design Parameters",
-#       material_text_box("d_N", "N:"),
-#       material_text_box("d_n", "n:"),
-#       material_text_box("d_p", "p:")
-#     ),
+    do.call(material_card, c(title="Design Parameters", boxes))
 
-    }
+  })
 
   observeEvent(input$import_library, {
     DD$design <- NULL
@@ -160,7 +154,7 @@ inspector.server <- function(input, output, clientData, session) {
     message("***!\n\t", input$import_button, "\n****")
     if(!is.null(design)) {
       output$window_closer <- renderUI(welcome_closer)
-      loadDesign(output, design)
+      # loadDesign(output, design)
     }
   }, ignoreNULL = FALSE)
 
@@ -175,26 +169,61 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
+  observeEvent(input$run,{
 
+    design <- DD$design
 
-#
-#   output$window_closer <- renderUI({
-#     if(isolate(DD$done))
-#       welcome_closer
-#     })
+    DD$args <- list()
 
+    for(n in names(formals(design))){
+      DD$args[[n]] <- as.numeric(input[[paste0("d_", n)]])
+    }
 
+    message("instantiating design...\n")
+    DD$design_instance <- do.call(design, DD$args)
 
+    message("Running diagnosis")
+    # browser()
+    withProgress(
+      DD$diagnosis <- diagnose_design(orig=do.call(DD$design, list()), updated=DD$design_instance, sims = input$d_sims, bootstrap_sims = input$d_draws)
+    )
+    # bsCollapse(id="outputCollapse", open="Summary",
+    #            bsCollapsePanel("Summary", uiOutput("summaryPanel")),
+    #            bsCollapsePanel("Citation", uiOutput("citationPanel")),
+    #            bsCollapsePanel("Diagnostics", uiOutput("diagnosticsPanel")),
+    #            bsCollapsePanel("Code", uiOutput("codePanel")),
+    #            bsCollapsePanel("Simulate", uiOutput("simulationPanel"))
+    # )
+    #
 
-
-  output$cards <- renderUI({
-    a <- replicate(6, material_card(
-      title = "Example Card",
-      # depth = 5,
-      shiny::tags$h5("Card Content")
-    ), simplify = FALSE)
-    a
+    # browser()
   })
+
+
+    output$diagnosticsPanel <-    renderDataTable({
+      diag_tab <- get_diagnosands(diagnosis = DD$diagnosis)
+    # rownames(diag_tab) <- diag_tab$estimand_label
+    diag_tab <- round_df(diag_tab, 4)
+    diag_tab
+    }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+    output$simulationPanel <-    renderDataTable({
+      sims_tab <- get_simulations(diagnosis = DD$diagnosis)
+      # rownames(diag_tab) <- diag_tab$estimand_label
+      sims_tab <- round_df(sims_tab, 4)
+      sims_tab
+    }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+
+
+    output$citationPanel <- renderPrint(cite_design(DD$design_instance))
+    output$summaryPanel <- renderPrint(summary(DD$design_instance))
+    output$codePanel    <- renderText({
+      paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+      })
+
+
+
 
 }
 

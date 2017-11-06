@@ -62,20 +62,15 @@ inspector.ui <- material_page(
   material_row(
     material_column(
       width = 4,
-      material_card(
-        "Design Parameters",
-        material_text_box("d_N", "N:"),
-        material_text_box("d_n", "n:"),
-        material_text_box("d_p", "p:")
-      ),
+      uiOutput("designParamaters"),
       material_card(
         "Diagnostic Parameters",
-        material_text_box("d_Sims", "Num of Simulations:"),
-        material_text_box("d_draws", "Num of Draws (per Simulation):")
+        textInput("d_Sims", "Num of Simulations:", 20),
+        textInput("d_draws", "Num of Draws (per Simulation):", 50)
         # material_button("RUN", "Run Design")
       ),
-      material_button("run", "Run Design"),
-      material_button("export", "Export...")
+      actionButton("run", "Run Design"),
+      actionButton("export", "Export...")
 
     ),
     material_column(
@@ -99,29 +94,54 @@ inspector.ui <- material_page(
 
 inspector.server <- function(input, output, clientData, session) {
 
-  DD <-   reactiveValues(design = NULL, lib= NULL, filename=NULL, url=NULL, done=FALSE)
+  DD <-   reactiveValues(design = NULL)
 
 
-  loadDesign <- function() 1
+  loadDesign <- function(output, design_fn) {
 
-  observeEvent(input$import_library, output$import_panel_choice <- renderUI(importLibrary), ignoreInit = TRUE)
-  observeEvent(input$import_url,     output$import_panel_choice <- renderUI(importUrl),     ignoreInit = TRUE)
+    f <- names(formals(design_fn))
+    v <- as.list(formals(design_fn))
+
+    boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE)
+
+    names(boxes) <- NULL
+
+
+    output$designParamaters <- renderUI(
+      do.call(material_card, c(title="Design Parameters", boxes))
+    )
+#
+#     material_card(
+#       "Design Parameters",
+#       material_text_box("d_N", "N:"),
+#       material_text_box("d_n", "n:"),
+#       material_text_box("d_p", "p:")
+#     ),
+
+    }
+
+  observeEvent(input$import_library, {
+    DD$design <- NULL
+    output$import_panel_choice <- renderUI(importLibrary)
+  }, ignoreInit = TRUE)
+  observeEvent(input$import_url,     {
+    DD$design <- NULL
+    output$import_panel_choice <- renderUI(importUrl)
+  },     ignoreInit = TRUE)
   observeEvent(input$import_file,    {
+    DD$design <- NULL
     output$import_panel_choice <- renderUI(importFile)
-
-
-
-
-
-
-    },    ignoreInit = TRUE)
+  },    ignoreInit = TRUE)
 
 
   observeEvent(input$import_button, {
     # req(input$import_file_button)
+    design <- isolate(DD$design)
     message("***!\n\t", input$import_button, "\n****")
-    if(!is.null(isolate(DD$design)))
+    if(!is.null(design)) {
       output$window_closer <- renderUI(welcome_closer)
+      loadDesign(output, design)
+    }
   }, ignoreNULL = FALSE)
 
 

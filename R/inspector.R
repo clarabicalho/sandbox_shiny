@@ -70,7 +70,7 @@ inspector.ui <- material_page(
         setInterval(function(){
               console.log('HIARYLAH');
               $('.tooltipped').tooltip({delay: 50});
-        }, 20*1000);
+        }, 10*1000);
     "),
   welcome,
   material_row(
@@ -84,7 +84,7 @@ inspector.ui <- material_page(
         # material_button("RUN", "Run Design")
       ),
       actionButton("run", "Run Design"),
-      actionButton("export", "Export...")
+      downloadButton("download_design", "Export Design...")
 
     ),
     material_column(
@@ -95,7 +95,8 @@ inspector.ui <- material_page(
         bsCollapsePanel("Summary", verbatimTextOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
         bsCollapsePanel("Diagnostics", dataTableOutput("diagnosticsPanel")),
-        bsCollapsePanel("Code", verbatimTextOutput("codePanel")),
+        bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
+                        downloadButton("download_code", "Export Code...")),
         bsCollapsePanel("Simulate", dataTableOutput("simulationPanel"))
       )
       # shiny::tags$h1("Output2")
@@ -117,9 +118,24 @@ inspector.server <- function(input, output, clientData, session) {
 
     design_fn <- req(DD$design)
     f <- names(formals(design_fn))
-    v <- as.list(formals(design_fn))
+    v <- lapply(as.list(formals(design_fn)), eval)
 
     boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+
+    boxes <- list()
+
+    for(i in seq_along(f)){
+      fi <- f[i]
+      input_id <- paste0("d_", fi)
+      input_label <- paste0(fi, ":")
+      if(length(v[[i]]) == 1){
+        boxes[[i]] <- textInput(input_id, input_label,  v[[i]])
+      } else {
+        boxes[[i]] <- selectInput(input_id, input_label, v[[i]], v[[i]][1])
+
+      }
+
+    }
 
 
     if(length(attr(design_fn, "tips")) == length(f)){
@@ -175,6 +191,7 @@ inspector.server <- function(input, output, clientData, session) {
 
     DD$args <- list()
 
+    # browser()
     for(n in names(formals(design))){
       DD$args[[n]] <- as.numeric(input[[paste0("d_", n)]])
     }
@@ -185,7 +202,10 @@ inspector.server <- function(input, output, clientData, session) {
     message("Running diagnosis")
     # browser()
     withProgress(
-      DD$diagnosis <- diagnose_design(orig=do.call(DD$design, list()), updated=DD$design_instance, sims = input$d_sims, bootstrap_sims = input$d_draws)
+      DD$diagnosis <- diagnose_design(original_design=do.call(DD$design, list()),
+                                      updated_design=DD$design_instance,
+                                      sims = as.numeric(input$d_sims),
+                                      bootstrap_sims = as.numeric(input$d_draws))
     )
     # bsCollapse(id="outputCollapse", open="Summary",
     #            bsCollapsePanel("Summary", uiOutput("summaryPanel")),
@@ -219,10 +239,25 @@ inspector.server <- function(input, output, clientData, session) {
     })
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))
-    output$summaryPanel <- renderPrint(summary(DD$design_instance))
-    output$codePanel    <- renderText(DD$code())
+    output$summaryPanel  <- renderPrint(summary(DD$design_instance))
+    output$codePanel     <- renderText(DD$code())
 
 
+    output$download_design <- downloadHandler(
+      filename=function() {
+        paste0("design-", Sys.Date(), ".RDS")
+      },
+      content = function(file) {
+        saveRDS(DD$design_instance, file)
+      })
+
+    output$download_code <- downloadHandler(
+      filename=function() {
+        paste0("design-", Sys.Date(), ".R")
+      },
+      content = function(file) {
+        writeLines(DD$code(), file)
+      })
 
 
 }

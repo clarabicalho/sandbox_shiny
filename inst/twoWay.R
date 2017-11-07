@@ -1,7 +1,7 @@
 
 two_way_template <- function(N=c(30,100,500, 1000),
-                             beta_A=c(-1,0,-1),
-                             beta_B=c(-1,0,-1),
+                             beta_A=c(-1,0,1),
+                             beta_B=c(-1,0,1),
                              gamma_AB=c(-1,-.5,0,.5,1))
 {
   my_population <- declare_population(N = N, noise = rnorm(N))

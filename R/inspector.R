@@ -35,9 +35,9 @@ welcome_closer <- shiny::tags$script("
 
 importLibrary <- material_card("Import from Library",
   material_radio_button("import_library_dropdown", "Library:",
-                    c("Two Arm"="two_arm", "p Arms"="p_arms","Two Way Factorial"="two_fac")
+                    c("Two Arm"="two_arm","Two Way Factorial"="two_fac")
                     ),
-  actionButton("import_button", "Import")
+  actionButton("import_button", "OK")
 )
 
 importFile <- material_card("Import from File",
@@ -45,13 +45,13 @@ importFile <- material_card("Import from File",
                                       accept = ".RDS"
                             ),
                             # uiOutput("import_button", "Import")
-                            actionButton("import_button", "Import")
+                            actionButton("import_button", "OK")
 )
 
 
 importUrl <- material_card("Import from URL",
                            material_text_box("import_url_txt", "URL"),
-                           actionButton("import_button", "Import")
+                           actionButton("import_button", "OK")
 )
 
 
@@ -167,6 +167,11 @@ inspector.server <- function(input, output, clientData, session) {
   observeEvent(input$import_button, {
     # req(input$import_file_button)
     design <- isolate(DD$design)
+    if(is.charater(design)){
+      tf <- tempfile()
+      download.file(design, tf)
+      design <- DD$design <- readRDS(tf)
+    }
     message("***!\n\t", input$import_button, "\n****")
     if(!is.null(design)) {
       output$window_closer <- renderUI(welcome_closer)
@@ -182,6 +187,11 @@ inspector.server <- function(input, output, clientData, session) {
     DD$design <- readRDS(input$import_file1$datapath)
     str(DD$design)
     }, ignoreNULL = TRUE)
+
+  observeEvent(input$import_url_txt, {
+    DD$design <- input$import_url_txt
+    str(DD$design)
+  }, ignoreNULL = TRUE)
 
 
 

@@ -76,7 +76,7 @@ inspector.ui <- material_page(
   material_row(
     material_column(
       width = 4,
-      uiOutput("designParamaters"),
+      uiOutput("designParameters"),
       material_card(
         "Diagnostic Parameters",
         my_tipify(textInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
@@ -108,11 +108,11 @@ inspector.ui <- material_page(
 
 inspector.server <- function(input, output, clientData, session) {
 
-  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL)
+  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="")
 
 
 
-  output$designParamaters <- renderUI({
+  output$designParameters <- renderUI({
   # loadDesign <- function(output, design_fn) {
 
     design_fn <- req(DD$design)
@@ -214,13 +214,13 @@ inspector.server <- function(input, output, clientData, session) {
       sims_tab
     }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
-
+    DD$code <- reactive({
+      paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+    })
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))
     output$summaryPanel <- renderPrint(summary(DD$design_instance))
-    output$codePanel    <- renderText({
-      paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
-      })
+    output$codePanel    <- renderText(DD$code())
 
 
 
@@ -229,6 +229,6 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-
+#' @export
 DDinspector <- shinyApp(inspector.ui, inspector.server)
 # DDinspector

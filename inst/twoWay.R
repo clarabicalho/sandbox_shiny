@@ -4,6 +4,13 @@ two_way_template <- function(N=c(30,100,500, 1000),
                              beta_B=c(-1,0,1),
                              gamma_AB=c(-1,-.5,0,.5,1))
 {
+  N <- match.arg(N)
+  beta_A <- match.arg(beta_A)
+  beta_B <- match.arg(beta_B)
+  gamma_AB <- match.arg(gamma_AB)
+
+
+
   my_population <- declare_population(N = N, noise = rnorm(N))
 
   my_potential_outcomes <- declare_potential_outcomes(Y_Z_T1 = noise,
@@ -41,3 +48,49 @@ attr(two_arm_template, "tips") <- c(
 )
 
 saveRDS(two_way_template, "~/two_way.RDS")
+
+#################
+
+declare_and_diagnose_memo <- memoise(
+  function(...){
+  dec <- two_way_template(...)
+  diag <- diagnose_design(dec)
+  code <- deparse(pryr::substitute_q(body(two_way_template), list(...)))
+  code <- paste(code[grep('match.arg', code, invert = TRUE)], collapse='\n')
+  list(dec, diag, code)
+  },
+ cache = cache_filesystem("~/cache/two_way"))
+
+
+v <- lapply(formals(two_way_template), eval)
+
+combos <- do.call(expand.grid, v)
+
+
+for(i in 1:nrow(combos)) {
+  message(i," of ", nrow(combos), "\n")
+  d <- do.call(declare_and_diagnose_memo, combos[i,,drop=FALSE])
+  # diagnose_memo()
+
+}
+
+designer <- function(N=c(30,100,500, 1000),
+                     beta_A=c(-1,0,1),
+                     beta_B=c(-1,0,1),
+                     gamma_AB=c(-1,-.5,0,.5,1)) {
+  d <- declare_and_diagnose_memo(N=N, beta_A=beta_A, beta_B=beta_B, gamma_AB=gamma_AB)
+  structure(d[[1]], diagnosis=d[[2]], code=d[[3]])
+
+}
+
+diagnoser <- function(design, ...) {
+
+  attr(design, "diagnosis")
+
+}
+
+save(declare_and_diagnose_memo, designer, diagnoser, two_way_template, file="~/two_way_memo.Rdata")
+
+
+
+

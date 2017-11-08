@@ -34,8 +34,8 @@ welcome_closer <- shiny::tags$script("
                                     ")
 
 importLibrary <- material_card("Import from Library",
-  material_radio_button("import_library_dropdown", "Library:",
-                    c("Two Arm"="two_arm","Two Way Factorial"="two_fac")
+  radioButtons("import_library_dropdown", "Library:",
+                    c("Two Arm"="two_arm","Two Way Factorial"="~/two_way_memo.Rdata")
                     ),
   actionButton("import_button", "OK")
 )
@@ -53,6 +53,14 @@ importUrl <- material_card("Import from URL",
                            material_text_box("import_url_txt", "URL"),
                            actionButton("import_button", "OK")
 )
+
+diagnostic_params <-       material_card(
+  "Diagnostic Parameters",
+  my_tipify(textInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
+  my_tipify(textInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation."),
+  actionButton("run", "Run Design")
+)
+
 
 
 #' @import shinymaterial
@@ -77,27 +85,21 @@ inspector.ui <- material_page(
     material_column(
       width = 4,
       uiOutput("designParameters"),
-      material_card(
-        "Diagnostic Parameters",
-        my_tipify(textInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
-        my_tipify(textInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation.")
-        # material_button("RUN", "Run Design")
-      ),
-      actionButton("run", "Run Design"),
-      downloadButton("download_design", "Export Design...")
-
+      uiOutput("diagnosticParameters")
     ),
     material_column(
       width = 8,
       # offset=6,
       material_card("Output",
-      bsCollapse(id="outputCollapse", open="Summary",
+      bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", verbatimTextOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
         bsCollapsePanel("Diagnostics", dataTableOutput("diagnosticsPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
-        bsCollapsePanel("Simulate", dataTableOutput("simulationPanel"))
+        bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
+        bsCollapsePanel("About", "About Declare design...")
+
       )
       # shiny::tags$h1("Output2")
       )
@@ -109,7 +111,8 @@ inspector.ui <- material_page(
 
 inspector.server <- function(input, output, clientData, session) {
 
-  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="")
+  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",
+                         precomputed=FALSE, observers=list())
 
 
 
@@ -120,7 +123,7 @@ inspector.server <- function(input, output, clientData, session) {
     f <- names(formals(design_fn))
     v <- lapply(as.list(formals(design_fn)), eval)
 
-    boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+    # boxes <- mapply(textInput, paste0("d_", f), paste0(f, ":"),  v, SIMPLIFY = FALSE, USE.NAMES = FALSE)
 
     boxes <- list()
 
@@ -132,7 +135,6 @@ inspector.server <- function(input, output, clientData, session) {
         boxes[[i]] <- textInput(input_id, input_label,  v[[i]])
       } else {
         boxes[[i]] <- selectInput(input_id, input_label, v[[i]], v[[i]][1])
-
       }
 
     }
@@ -145,10 +147,29 @@ inspector.server <- function(input, output, clientData, session) {
     }
 
 
+    boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
+
+    if(DD$precomputed){
+      boxes[[length(boxes)+ 1]] <-  tags$script(
+           "$(document).on('change', 'select', function () {
+                Shiny.onInputChange('run', Math.random());
+                //Shiny.onInputChange('lastSelectName',name);
+                // to report changes on the same selectInput
+                //Shiny.onInputChange('lastSelect', Math.random());
+                });")
+
+
+    }
 
     do.call(material_card, c(title="Design Parameters", boxes))
 
   })
+
+
+  output$diagnosticParameters <- renderUI({
+    if(!DD$precomputed) diagnostic_params;
+  })
+
 
   observeEvent(input$import_library, {
     DD$design <- NULL
@@ -167,7 +188,7 @@ inspector.server <- function(input, output, clientData, session) {
   observeEvent(input$import_button, {
     # req(input$import_file_button)
     design <- isolate(DD$design)
-    if(is.charater(design)){
+    if(is.character(design)){
       tf <- tempfile()
       download.file(design, tf)
       design <- DD$design <- readRDS(tf)
@@ -185,17 +206,36 @@ inspector.server <- function(input, output, clientData, session) {
 
   observeEvent(input$import_file1, {
     DD$design <- readRDS(input$import_file1$datapath)
-    str(DD$design)
+    DD$precomputed <- FALSE
+
+    # str(DD$design)
     }, ignoreNULL = TRUE)
 
   observeEvent(input$import_url_txt, {
     DD$design <- input$import_url_txt
+    DD$precomputed <- FALSE
+
     str(DD$design)
   }, ignoreNULL = TRUE)
 
+  observeEvent(input$import_library_dropdown,{
+    if(file.exists(input$import_library_dropdown)){
+      load(input$import_library_dropdown, envir = .GlobalEnv)
+      DD$precomputed <- TRUE
+      DD$design <- designer
+    }
+
+  }, ignoreNULL=TRUE)
 
 
-  observeEvent(input$run,{
+
+
+  observeEvent({
+    input$run;
+
+    },{
+
+    message("Run Button Clicked;\n")
 
     design <- DD$design
 
@@ -208,6 +248,11 @@ inspector.server <- function(input, output, clientData, session) {
 
     message("instantiating design...\n")
     DD$design_instance <- do.call(design, DD$args)
+
+    if(!is.null(attr(DD$design_instance, "diagnosis"))){
+      DD$diagnosis <- attr(DD$design_instance, "diagnosis")
+      return()
+    }
 
     message("Running diagnosis")
     # browser()
@@ -245,7 +290,11 @@ inspector.server <- function(input, output, clientData, session) {
     }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
     DD$code <- reactive({
-      paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+      if(!is.null(attr(DD$design_instance, "code"))){
+        attr(DD$design_instance, "code")
+      } else {
+        paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+      }
     })
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))

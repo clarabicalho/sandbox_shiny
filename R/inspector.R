@@ -17,10 +17,12 @@ welcome <-         material_modal(
   material_button("import_url", "Import from url..."),
   uiOutput(outputId = "import_panel_choice", inline=FALSE)
 )
+
+
+
+welcome <- remove_close_button_from_modal(welcome)
 welcome[[2]][[1]] <- NULL# skip making outer button
-closebutton <- welcome[[2]][[1]]$children[[2]] # save close button for latter
-welcome[[2]][[1]]$children[[2]] <- NULL # skip close button in modal dialog
-welcome[[2]][[1]]$children[[1]]$attribs$style="box-shadow:none; border:none;"
+
 welcome[[3]] <-   shiny::tags$script("
      $(document).ready(function(){
       $('#welcome_modal').modal('open');
@@ -285,7 +287,8 @@ inspector.server <- function(input, output, clientData, session) {
     }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
 
     output$simulationPanel <-    renderDataTable({
-      sims_tab <- get_simulations(diagnosis = DD$diagnosis)
+      # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
+      sims_tab <- draw_data(DD$design_instance)
       # rownames(diag_tab) <- diag_tab$estimand_label
       sims_tab <- round_df(sims_tab, 4)
       sims_tab

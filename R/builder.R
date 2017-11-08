@@ -95,6 +95,7 @@ builder.ui <- material_page(
 buildStep <- function(step,i){
   js="Shiny.onInputChange('%s', %d)"
 
+
   card <- material_card(title=steps_labels[step$type],
                         shiny::tags$p(step$args),
                         remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
@@ -114,6 +115,8 @@ buildStep <- function(step,i){
 builder.server <- function(input, output, clientData, session) {
 
   DD <- reactiveValues(steps=list(list(type='declare_population', args='`N=100`,noise=rnorm(N)')))
+
+  tmpfile <- tempfile()
 
 
 
@@ -224,6 +227,7 @@ builder.server <- function(input, output, clientData, session) {
     formals(f) <- formals.x()
     body(f) <- parse(text=code.body())
     print(f)
+    saveRDS(f, tmpfile)
     f
   })
 
@@ -273,6 +277,14 @@ builder.server <- function(input, output, clientData, session) {
      #                });", i))
      #           })
      DD$steps[[i]] <- w
+
+  })
+
+
+
+  output$inspectLink <- renderUI({
+
+    tags$a(href=paste0("http://localhost:8000/?file=", tmpfile), "Inspector")
 
   })
 

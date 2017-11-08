@@ -27,13 +27,7 @@ welcome[[3]] <-   shiny::tags$script("
      $(document).ready(function(){
       $('#welcome_modal').modal('open');
      });")
-welcome[[4]] <- uiOutput("window_closer")
 
-welcome_closer <- shiny::tags$script("
-     $(document).ready(function(){
-      $('#welcome_modal').modal('close');
-     });
-                                    ")
 
 
  ### Different types of import dialogs
@@ -73,6 +67,13 @@ diagnostic_params <-       material_card(
 inspector.ui <- material_page(
   title = "Design Inspector",
   nav_bar_color = nav_bar_color,
+  tags$script('
+  Shiny.addCustomMessageHandler("closeModal",
+        function(name) {
+          $(name).modal("close");
+        });
+  '),
+
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
@@ -199,7 +200,7 @@ inspector.server <- function(input, output, clientData, session) {
     }
     message("***!\n\t", input$import_button, "\n****")
     if(!is.null(design)) {
-      output$window_closer <- renderUI(welcome_closer)
+      session$sendCustomMessage(type = "closeModal", "#welcome_modal")
       # loadDesign(output, design)
     }
   }, ignoreNULL = FALSE)

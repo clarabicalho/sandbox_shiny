@@ -36,6 +36,13 @@ builder.ui <- material_page(
   # shiny::tags$h1("Page Content"),
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
   bootstrapLib(),
+  # handler to receive data from server
+  tags$script('
+  Shiny.addCustomMessageHandler("closeModal",
+        function(name) {
+          $(name).modal("close");
+        });
+  '),
 
   material_row(
     material_column(
@@ -53,11 +60,11 @@ builder.ui <- material_page(
                      selectInput("add_type", "Type:", steps_funs),
                      textInput("add_args", "Options"),
                      actionButton("save_add_step", "Save"),
-                     actionButton("cancel_add_step", "Cancel"),
-                     uiOutput("add_step_closer")
+                     actionButton("cancel_add_step", "Cancel")
+                     # uiOutput("add_step_closer")
        )),
       tags$br(),
-      downloadButton("export", "Export Design"),
+      downloadButton("download_design", "Export Design"),
       uiOutput("inspectLink")
       )
     ),
@@ -66,13 +73,14 @@ builder.ui <- material_page(
       # offset=6,
       material_card("Design Output",
       bsCollapse(id="outputCollapse", open="About",
-                 bsCollapsePanel("Summary", "The summary"),
+                 #bsCollapsePanel("Summary", "The summary"),
                  bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                                  downloadButton("download_code", "Export Code...")),
                  bsCollapsePanel("Simulate Data", dataTableOutput("simulationPanel")),
                  bsCollapsePanel("Quick Diagnosis ", "Diagnosis",
                                  paste("Number of simulations: 5"),
-                                 paste("Number of draws: 10")),
+                                 paste("Number of draws: 10"),
+                                 dataTableOutput("diagnosisPanel")),
                  bsCollapsePanel("About", "About DDbuilder...")
                  # bsCollapsePanel("Export", "export here")
       )
@@ -84,15 +92,20 @@ builder.ui <- material_page(
 )
 
 #' @importFrom stringr str_match_all
-buildStep <- function(step){
-
+buildStep <- function(step,i){
+  js="Shiny.onInputChange('%s', %d)"
 
   card <- material_card(title=steps_labels[step$type],
                         shiny::tags$p(step$args),
-                        material_modal(modal_id="edit_step", button_text="Edit...", title="Editing",
-                                       "HIARYLAH",
-                                       actionButton("delete_step", "Delete"))
-                        )
+                        remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
+                                       selectInput(sprintf("edit_%d_type", i), "Type:", steps_funs, step$type),
+                                       textInput(sprintf("edit_%d_args", i), "Options", step$args),
+                                       actionButton(sprintf("edit_%d_save", i), "Save", onclick=sprintf(js, "edit_save", i)),
+                                       actionButton(sprintf("edit_%d_cancel", i), "Cancel", onclick=sprintf(js, "edit_cancel", i)),
+                                       actionButton(sprintf("edit_%d_delete", i), "Delete", onclick=sprintf(js, "edit_delete", i)),
+                                       uiOutput(sprintf("edit_%d_closer", i))
+                        ))
+  )
 
 
   card
@@ -100,7 +113,7 @@ buildStep <- function(step){
 
 builder.server <- function(input, output, clientData, session) {
 
-  DD <- reactiveValues(steps=list(list(type='declare_population', args='`N=50`')))
+  DD <- reactiveValues(steps=list(list(type='declare_population', args='`N=100`,noise=rnorm(N)')))
 
 
 
@@ -111,16 +124,36 @@ builder.server <- function(input, output, clientData, session) {
     #   shiny::tags$h5("Card Content")
     # ), simplify = FALSE)
     # a
-    lapply(DD$steps, buildStep)
+    ret <- list()
+    for(i in seq_along(DD$steps)){
+      ret[[i]] <- buildStep(DD$steps[[i]], i)
+    }
+
+    ret[[length(ret) + 1]] <- tags$script("
+      $(document).ready(function(){
+        // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
+        $('.modal').modal()
+      });"
+    )
+    ret
   })
 
   output$simulationPanel <-    renderDataTable({
     # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
-    sims_tab <- draw_data(DD$design_instance)
+    sims_tab <- draw_data(design_instance())
     # rownames(diag_tab) <- diag_tab$estimand_label
     sims_tab <- round_df(sims_tab, 4)
     sims_tab
   }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
+  output$diagnosisPanel <-    renderDataTable({
+    # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
+    sims_tab <- diagnose_design(design_instance(), sims = 5, bootstrap_sims = 5)
+    # rownames(diag_tab) <- diag_tab$estimand_label
+    sims_tab <- round_df(sims_tab, 4)
+    sims_tab
+  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+
 
 
   observeEvent(input$save_add_step,{
@@ -128,24 +161,16 @@ builder.server <- function(input, output, clientData, session) {
     w <- list(type=input$add_type, args=input$add_args)
     DD$steps <- append(DD$steps, list(w))
 
-    message("code.x:\n", code.x(),
-            "\n\ncode.pretty", code.pretty(),
-            "\n\ncode.body", code.body(),
-            "\n\n")
+    # message("code.x:\n", code.x(),
+    #         "\n\ncode.pretty", code.pretty(),
+    #         "\n\ncode.body", code.body(),
+    #         "\n\n")
 
-    output$add_step_closer <- renderUI(shiny::tags$script("
-     $(document).ready(function(){
-      $('#add_step').modal('close');
-     });
-                                    "))
+    session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
   })
 
   observeEvent(input$cancel_add_step, {
-    output$add_step_closer <- renderUI(shiny::tags$script("
-     $(document).ready(function(){
-      $('#add_step').modal('close');
-     });
-                                    "))
+    session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
   })
 
   code.x <- reactive({
@@ -159,10 +184,10 @@ builder.server <- function(input, output, clientData, session) {
 
   ### code panel and download
 
+  code.pretty <- reactive({gsub('`', '', code.x(), fixed = TRUE)})
+
   output$codePanel <- renderText({
-    code.pretty <- gsub('`', '', code.x(), fixed = TRUE)
-    # message("\n\ncode.pretty:\n\n", code.pretty, "\n")
-    code.pretty
+    code.pretty()
   })
 
   output$download_code <- downloadHandler(
@@ -185,25 +210,72 @@ builder.server <- function(input, output, clientData, session) {
   })
 
   code.body <- reactive({
-    gsub("`([^` ]+) ?= ?([^ `]+)`", "\\1", code.x())
+    gsub("`([^` ]+) ?= ?([^ `]+)`", "\\1 = \\1", code.x())
     # message("\n\n\ code.body:\n ", code.pretty, "\n")
     # code.pretty
 
   })
 
 
+  ### make template
 
   template.fun <- reactive({
     f <- function() 0
     formals(f) <- formals.x()
-    body(f) <- code.body()
+    body(f) <- parse(text=code.body())
     print(f)
     f
   })
 
+  ## make design instance
+
+  design_instance <- reactive(template.fun()())
 
 
-  #################
+  output$download_design <- downloadHandler(
+    filename=function() {
+      paste0("design-", Sys.Date(), ".RDS")
+    },
+    content = function(file) {
+      # browser()
+      saveRDS(design_instance(), file)
+    })
+
+
+  ################# editer observers
+
+  observeEvent(input$edit_cancel,{
+    i <- input$edit_cancel
+
+    session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+
+  })
+
+  observeEvent(input$edit_delete, {
+               i <- input$edit_delete
+               session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+
+     message("deleting...\n")
+     DD$steps[[i]] <- NULL
+
+  })
+
+  observeEvent(input$edit_save, {
+     i <- input$edit_save
+     w <- list(type=input[[sprintf("edit_%d_type", i)]], args=input[[sprintf("edit_%d_args", i)]])
+
+     session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+
+     # output[[]] <- renderUI({
+     #             tags$script(sprintf("
+     #                $(document).ready(function(){
+     #                  $('#edit_step_%d').modal('close');
+     #                });", i))
+     #           })
+     DD$steps[[i]] <- w
+
+  })
+
 
 
 }

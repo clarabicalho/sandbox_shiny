@@ -12,9 +12,9 @@ welcome <-         material_modal(
   button_text = "Modal",
   title = "Welcome",
   button_color = "red lighten-3",
-  material_button("import_library", "Import from library..."),
-  material_button("import_file", "Import from file..."),
-  material_button("import_url", "Import from url..."),
+  actionButton("import_library", "Import from library..."),
+  actionButton("import_file", "Import from file..."),
+  actionButton("import_url", "Import from url..."),
   uiOutput(outputId = "import_panel_choice", inline=FALSE)
 )
 
@@ -85,7 +85,7 @@ inspector.ui <- material_page(
               $('.tooltipped').tooltip({delay: 50});
         }, 10*1000);
     "),
-  welcome,
+  uiOutput("welcome"),
   material_row(
     material_column(
       width = 4,
@@ -168,6 +168,21 @@ inspector.server <- function(input, output, clientData, session) {
 
     do.call(material_card, c(title="Design Parameters", boxes))
 
+  })
+
+  output$welcome <- renderUI({
+    query <- parseQueryString(session$clientData$url_search)
+    if("file" %in% names(query)){
+      fname <- query[["file"]]
+      if(file.exists(fname)){
+        DD$design <- readRDS(fname)
+        return(NULL)
+      }
+
+
+    }
+
+    welcome
   })
 
 

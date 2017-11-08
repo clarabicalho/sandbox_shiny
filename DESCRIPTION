@@ -7,6 +7,9 @@ Maintainer: DeclareDesign <team@declaredesign.org>
 Description: TODO.
 Imports: shiny,
     DeclareDesign (>= 1.1.0),
+    fabricatr,
+    estimatr,
+    randomizr,
     stringr,
     shinymaterial,
     shinyBS

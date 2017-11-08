@@ -33,8 +33,10 @@ welcome_closer <- shiny::tags$script("
      });
                                     ")
 
+
+ ### Different types of import dialogs
 importLibrary <- material_card("Import from Library",
-  radioButtons("import_library_dropdown", "Library:",
+  selectInput("import_library_dropdown", "Library:",
                     c("Two Arm"="two_arm","Two Way Factorial"="~/two_way_memo.Rdata")
                     ),
   actionButton("import_button", "OK")

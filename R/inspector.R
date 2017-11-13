@@ -99,7 +99,7 @@ inspector.ui <- material_page(
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", verbatimTextOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", dataTableOutput("diagnosticsPanel")),
+        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
         bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
@@ -295,12 +295,13 @@ inspector.server <- function(input, output, clientData, session) {
   })
 
 
-    output$diagnosticsPanel <-    renderDataTable({
+    output$diagnosticsPanel <-    renderTable({
       diag_tab <- get_diagnosands(diagnosis = DD$diagnosis)
-    # rownames(diag_tab) <- diag_tab$estimand_label
-    diag_tab <- round_df(diag_tab, 4)
-    diag_tab
-    }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+    # # rownames(diag_tab) <- diag_tab$estimand_label
+    # diag_tab <- round_df(diag_tab, 4)
+    # diag_tab
+      pretty_diagnoses(diag_tab)
+    })
 
     output$simulationPanel <-    renderDataTable({
       # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
@@ -346,4 +347,4 @@ inspector.server <- function(input, output, clientData, session) {
 
 #' @export
 DDinspector <- shinyApp(inspector.ui, inspector.server)
-# DDinspector
+

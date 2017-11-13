@@ -19,6 +19,41 @@ steps_funs <- setNames(c(
 
 steps_labels <- setNames(names(steps_funs), steps_funs)
 
+pretty_diagnoses <- function(df, digits=4){
+  require(reshape2)
+
+  ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
+  names(ret) <- str_replace(str_to_title(names(ret)), "_.*", "")
+
+  ids <- names(ret)
+
+  data_columns <- names(df)
+  data_columns <- data_columns[grep('^se[(]|_label$|_ID$', data_columns, invert = TRUE)]
+
+  myfmt <- sprintf('%%.%if', digits)
+
+  for(col in data_columns) {
+    title <- str_to_title(str_replace_all(col, '_', ' '))
+    x <- sprintf(myfmt, df[[col]])
+    secol <- sprintf('se(%s)', col)
+    if( secol %in% names(df)) {
+      se <- sprintf(myfmt, df[[secol]])
+      x <- sprintf(paste('%s(%s)'), x, se)
+    }
+    ret[[title]] <- x
+  }
+
+  ret <- melt(ret, ids, variable.name="Diagnosand")
+
+  if('Design' %in% ids){
+    ret <- dcast(ret, ...~Design, value.var = "value")
+
+  }
+  ret
+}
+
+
+
 
 remove_close_button_from_modal <- function(modal){
   #TODO this is nasty
@@ -80,7 +115,7 @@ builder.ui <- material_page(
                  bsCollapsePanel("Quick Diagnosis ", "Diagnosis",
                                  paste("Number of simulations: 5"),
                                  paste("Number of draws: 10"),
-                                 dataTableOutput("diagnosisPanel")),
+                                 tableOutput("diagnosisPanel")),
                  bsCollapsePanel("About", "About DDbuilder...")
                  # bsCollapsePanel("Export", "export here")
       )

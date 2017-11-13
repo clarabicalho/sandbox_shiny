@@ -97,7 +97,7 @@ inspector.ui <- material_page(
       # offset=6,
       material_card("Output",
       bsCollapse(id="outputCollapse", open="About",
-        bsCollapsePanel("Summary", verbatimTextOutput("summaryPanel")),
+        bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
         bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
@@ -309,7 +309,7 @@ inspector.server <- function(input, output, clientData, session) {
       # rownames(diag_tab) <- diag_tab$estimand_label
       sims_tab <- round_df(sims_tab, 4)
       sims_tab
-    }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+    }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, info = FALSE))
 
     DD$code <- reactive({
       if(!is.null(attr(DD$design_instance, "code"))){
@@ -320,7 +320,10 @@ inspector.server <- function(input, output, clientData, session) {
     })
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))
-    output$summaryPanel  <- renderPrint(summary(DD$design_instance))
+    output$summaryPanel  <- renderUI({
+
+      pretty_summary(summary(DD$design_instance))
+      })
     output$codePanel     <- renderText(DD$code())
 
 

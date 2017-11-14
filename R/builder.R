@@ -53,7 +53,7 @@ pretty_diagnoses <- function(df, digits=4){
 }
 
 pretty_summary <- function(x) {
-  browser()
+  # browser()
 
   step_summary <- with(x,
                        mapply(pretty_summary_step, seq_along(causal_order_expr), variables_added, variables_modified, quantities_added, causal_order_expr, function_types, N, formulae,
@@ -62,7 +62,7 @@ pretty_summary <- function(x) {
 
 
   ret <- shiny::tags$div(
-    shiny::tags$header("Design Summary"),
+    # shiny::tags$header("Design Summary"),
 
 
 
@@ -102,9 +102,8 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
       )
 
 
-    ret <- shiny::tags$div(
-      shiny::tags$header("Step", i, "(", step_class, "):", step_name),
-      shiny::tags$hr(),
+    ret <- material_card(
+      paste("Step", i, "(", step_class, "):", step_name),
 
       if (!is.null(N)) {
         shiny::tags$p(N)
@@ -119,7 +118,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
           shiny::tags$p(
             "A single draw of the ", function_types, ":\n",
 
-            renderTable(quantities_added)()
+            HTML(renderTable(quantities_added)())
             )
         } else {
           shiny::tags$p(as.character(quantities_added))
@@ -132,7 +131,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
             "Added variable:",
             names(variables_added)[j],
             shiny::tags$br(),
-            as.character(variables_added[[j]])
+            HTML(renderTable(variables_added[[j]])())
             )
         })
       },
@@ -144,10 +143,10 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
             names(variables_modified)[j],
             shiny::tags$br(),
             "Before:",
-            as.character(variables_modified[[j]][["before"]]),
+            HTML(renderTable(variables_modified[[j]][["before"]])()),
             shiny::tags$br(),
             "After",
-            as.character(variables_modified[[j]][["after"]])
+            HTML(renderTable(variables_modified[[j]][["after"]])())
             )
         })
       }

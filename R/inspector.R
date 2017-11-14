@@ -99,7 +99,7 @@ inspector.ui <- material_page(
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
+        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel"), plotOutput("diagnosticsPlot")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
         bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
@@ -301,6 +301,25 @@ inspector.server <- function(input, output, clientData, session) {
     # diag_tab <- round_df(diag_tab, 4)
     # diag_tab
       pretty_diagnoses(diag_tab)
+    })
+
+    output$diagnosticsPlot <- renderPlot({
+      sims <- get_simulations(DD$diagnosis)
+      sims$covered <- sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper
+
+      lowest <- min(sims$est)
+      highest <- max(sims$est)
+
+      ggplot(sims) + aes(x=est) +
+        geom_density(aes(y=..count../mean(..count..)/4, fill=covered, group=covered), alpha=.4, position='stack') +
+        geom_errorbar(aes(ymin=ci_lower, ymax=ci_upper), alpha=.4) +
+        geom_point(aes(y=est)) +
+        geom_point(aes(y=estimand, col=covered)) +
+        facet_wrap(estimand_label~estimator_label) +
+        xlab("") + ylab("Estimate") +
+        scale_color_discrete(labels=c("OOB", "Covered"), name="") +
+        scale_fill_discrete(guide=FALSE)+
+        coord_flip()
     })
 
     output$simulationPanel <-    renderDataTable({

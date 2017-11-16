@@ -118,9 +118,10 @@ inspector.ui <- material_page(
 
 
 inspector.server <- function(input, output, clientData, session) {
-  require(DeclareDesign)
-  require(pryr)
-  require(base64enc)
+  library(DeclareDesign)
+  # require(pryr)
+  # require(base64enc)
+  library(ggplot2)
 
 
   DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",
@@ -159,7 +160,6 @@ inspector.server <- function(input, output, clientData, session) {
     }
 
 
-    boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
 
     if(DD$precomputed){
       boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal( material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
@@ -179,6 +179,9 @@ inspector.server <- function(input, output, clientData, session) {
 
 
     }
+
+    boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
+
 
     do.call(material_card, c(title="Design Parameters", boxes))
 
@@ -282,7 +285,11 @@ inspector.server <- function(input, output, clientData, session) {
 
     message("instantiating design...\n")
     if(exists("DEBUG", globalenv())) browser()
-    DD$design_instance <- do.call(design, DD$args)
+    DD$design_instance <- tryCatch(do.call(design, DD$args), error=function(e) 9999999)
+    if(identical(DD$design_instance, 9999999)) {
+      DD$diagnosis <- NULL
+      return() # bail out
+    }
 
     if(!is.null(attr(DD$design_instance, "diagnosis"))){
       DD$diagnosis <- attr(DD$design_instance, "diagnosis")
@@ -360,7 +367,7 @@ inspector.server <- function(input, output, clientData, session) {
     DD$code <- reactive({
       if(!is.null(attr(DD$design_instance, "code"))){
         attr(DD$design_instance, "code")
-      } else {
+      } else if(requireNamespace("pryr")){
         paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
       }
     })
@@ -407,7 +414,6 @@ inspector.server <- function(input, output, clientData, session) {
     })
 
 }
-
 
 
 #' @export

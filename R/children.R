@@ -35,6 +35,9 @@ children.ui <- local({
 })
 
 children.server <- function(input, output, clientData, session) {
+  library(ggplot2)
+  library(scales)
+
 
   families <- reactive({
 

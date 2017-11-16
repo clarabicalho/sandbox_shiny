@@ -19,6 +19,41 @@ steps_funs <- setNames(c(
 
 steps_labels <- setNames(names(steps_funs), steps_funs)
 
+step_help_text = list(
+  "declare_population" = shiny::tags$div(
+    shiny::tags$h5("Declare the Size and Features of the Population"),
+    shiny::tags$dl(
+      shiny::tags$dt("N"),
+      shiny::tags$dd("number of units to draw. If provided as fabricate(N = 5), this determines the number of units in the single-level data. If provided in level, i.e. fabricate(cities = level(N = 5)), N determines the number of units in a specific level of a hierarchical dataset."),
+      shiny::tags$dt("ID_label"),
+      shiny::tags$dd("(optional) variable name for ID variable, i.e. citizen_ID")
+    )
+    ),
+  "declare_potential_outcomes"=shiny::tags$div("PO"),
+  "declare_sampling"=shiny::tags$div("sampling"),
+  "declare_estimand"=shiny::tags$div("estimand"),
+  "declare_assignment"=shiny::tags$div("assign"),
+  "reveal_outcomes"=shiny::tags$div("reveal"),
+  "declare_estimator"=shiny::tags$div("estimator"))
+
+
+step_help_panels <- function(input){
+  out <- shiny::tags$div()
+#  browser()
+
+  for(sf in steps_funs) {
+    condition <- sprintf("input.%s == '%s'", input, sf)
+    # message(condition)
+    cp <- conditionalPanel(
+      condition = condition,
+      step_help_text[[sf]]
+      )
+    out$children <- append(out$children, list(cp))
+  }
+
+  out
+}
+
 pretty_diagnoses <- function(df, digits=4){
   require(reshape2)
 
@@ -200,6 +235,7 @@ builder.ui <- material_page(
       material_modal(modal_id="add_step", button_text="Add Step", title="New Step",
                      selectInput("add_type", "Type:", steps_funs),
                      textInput("add_args", "Options"),
+                     step_help_panels("add_type"),
                      actionButton("save_add_step", "Save"),
                      actionButton("cancel_add_step", "Cancel")
                      # uiOutput("add_step_closer")
@@ -242,6 +278,7 @@ buildStep <- function(step,i){
                         remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
                                        selectInput(sprintf("edit_%d_type", i), "Type:", steps_funs, step$type),
                                        textInput(sprintf("edit_%d_args", i), "Options", step$args),
+                                       step_help_panels(sprintf("edit_%d_type", i)),
                                        actionButton(sprintf("edit_%d_save", i), "Save", onclick=sprintf(js, "edit_save", i)),
                                        actionButton(sprintf("edit_%d_cancel", i), "Cancel", onclick=sprintf(js, "edit_cancel", i)),
                                        actionButton(sprintf("edit_%d_delete", i), "Delete", onclick=sprintf(js, "edit_delete", i)),
@@ -434,7 +471,7 @@ builder.server <- function(input, output, clientData, session) {
 
   output$inspectLink <- renderUI({
 
-    tags$a(href=paste0("http://localhost:8000/?file=", tmpfile), "Inspector")
+    tags$a(href=paste0("http://:8000/?file=", tmpfile), "Inspector")
 
   })
 

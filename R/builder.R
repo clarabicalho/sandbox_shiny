@@ -272,19 +272,26 @@ builder.ui <- material_page(
 buildStep <- function(step,i){
   js="Shiny.onInputChange('%s', %d)"
 
+  editor <- remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
+                                                          selectInput(sprintf("edit_%d_type", i), "Type:", steps_funs, step$type),
+                                                          textInput(sprintf("edit_%d_args", i), "Options", step$args),
+                                                          step_help_panels(sprintf("edit_%d_type", i)),
+                                                          actionButton(sprintf("edit_%d_save", i), "Save", onclick=sprintf(js, "edit_save", i)),
+                                                          actionButton(sprintf("edit_%d_cancel", i), "Cancel", onclick=sprintf(js, "edit_cancel", i)),
+                                                          actionButton(sprintf("edit_%d_delete", i), "Delete", onclick=sprintf(js, "edit_delete", i)),
+                                                          uiOutput(sprintf("edit_%d_closer", i))
+  ))
+
+  #browser()
+  editor[[2]][[1]]$attribs[["style"]] <- "display:inline;" # Yuck #TODO add class, write CSS rule
+
 
   card <- material_card(title=steps_labels[step$type],
-                        shiny::tags$p(step$args),
-                        remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
-                                       selectInput(sprintf("edit_%d_type", i), "Type:", steps_funs, step$type),
-                                       textInput(sprintf("edit_%d_args", i), "Options", step$args),
-                                       step_help_panels(sprintf("edit_%d_type", i)),
-                                       actionButton(sprintf("edit_%d_save", i), "Save", onclick=sprintf(js, "edit_save", i)),
-                                       actionButton(sprintf("edit_%d_cancel", i), "Cancel", onclick=sprintf(js, "edit_cancel", i)),
-                                       actionButton(sprintf("edit_%d_delete", i), "Delete", onclick=sprintf(js, "edit_delete", i)),
-                                       uiOutput(sprintf("edit_%d_closer", i))
-                        ))
-  )
+                        shiny::tags$div(step$args),
+                        actionButton(sprintf("edit_%i_up", i), "\U25B4", onclick=sprintf(js, "edit_up", i)),
+                        actionButton(sprintf("edit_%i_down", i), "\U25BE", onclick=sprintf(js, "edit_down", i)),
+                        editor
+                        )
 
 
   card
@@ -467,6 +474,19 @@ builder.server <- function(input, output, clientData, session) {
 
   })
 
+  observeEvent(input$edit_up, {
+    i <- input$edit_up
+    if(i == 1 || length(DD$steps) == 1) return()
+    DD$steps[i - 1:0] <- DD$steps[i - 0:1]
+
+  })
+
+  observeEvent(input$edit_down, {
+    i <- input$edit_down
+    if(i == length(DD$steps) || length(DD$steps) == 1) return()
+    DD$steps[i + 0:1] <- DD$steps[i + 1:0]
+
+  })
 
 
   output$inspectLink <- renderUI({

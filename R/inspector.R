@@ -36,9 +36,7 @@ welcome[[3]] <-   shiny::tags$script("
 
  ### Different types of import dialogs
 importLibrary <- material_card("Import from Library",
-  selectInput("import_library_dropdown", "Library:",
-                    c("Two Arm"="~/cache/two_arm_memo.Rdata","Two Way Factorial"="~/cache/two_way_factorial.Rdata")
-                    ),
+  uiOutput("import_library_ui"),
   actionButton("import_button", "OK")
 )
 
@@ -399,6 +397,15 @@ inspector.server <- function(input, output, clientData, session) {
       vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
       HTML(vightml)
     })
+
+    output$import_library_ui <- renderUI({
+            my_design_library_path <- getOption("design.library.path", "~/cache")
+            cached <- dir(my_design_library_path, "[.]Rdata$", full.names = TRUE)
+            names(cached)   <-  str_to_title(str_replace_all(str_replace(basename(cached), "[.]Rdata$", ""), "_", " "))
+
+            selectInput("import_library_dropdown", "Library:", cached)
+    })
+
 }
 
 

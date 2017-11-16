@@ -7,6 +7,10 @@ my_tipify <- function(txtbox, tip){
   txtbox
 }
 
+####
+####  Welcome page
+####
+
 welcome <-         material_modal(
   modal_id = "welcome_modal",
   button_text = "Modal",
@@ -25,7 +29,7 @@ welcome[[2]][[1]] <- NULL# skip making outer button
 
 welcome[[3]] <-   shiny::tags$script("
      $(document).ready(function(){
-      $('#welcome_modal').modal('open');
+      $('#welcome_modal').modal('open', {dismissible: false});
      });")
 
 
@@ -33,7 +37,7 @@ welcome[[3]] <-   shiny::tags$script("
  ### Different types of import dialogs
 importLibrary <- material_card("Import from Library",
   selectInput("import_library_dropdown", "Library:",
-                    c("Two Arm"="two_arm","Two Way Factorial"="~/two_way_memo.Rdata")
+                    c("Two Arm"="~/cache/two_arm_memo.Rdata","Two Way Factorial"="~/cache/two_way_factorial.Rdata")
                     ),
   actionButton("import_button", "OK")
 )
@@ -54,8 +58,8 @@ importUrl <- material_card("Import from URL",
 
 diagnostic_params <-       material_card(
   "Diagnostic Parameters",
-  my_tipify(textInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
-  my_tipify(textInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation."),
+  my_tipify(numericInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
+  my_tipify(numericInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation."),
   actionButton("run", "Run Design")
 )
 
@@ -63,6 +67,7 @@ diagnostic_params <-       material_card(
 
 #' @import shinymaterial
 #' @import shinyBS
+#'
 #'
 inspector.ui <- material_page(
   title = "Design Inspector",
@@ -99,7 +104,7 @@ inspector.ui <- material_page(
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel"), plotOutput("diagnosticsPlot")),
+        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") ,plotOutput("diagnosticsPlot")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
         bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
@@ -115,6 +120,10 @@ inspector.ui <- material_page(
 
 
 inspector.server <- function(input, output, clientData, session) {
+  require(DeclareDesign)
+  require(pryr)
+  require(base64enc)
+
 
   DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",
                          precomputed=FALSE, observers=list())
@@ -137,9 +146,9 @@ inspector.server <- function(input, output, clientData, session) {
       input_id <- paste0("d_", fi)
       input_label <- paste0(fi, ":")
       if(length(v[[i]]) == 1){
-        boxes[[i]] <- textInput(input_id, input_label,  v[[i]])
+        boxes[[i]] <- numericInput(input_id, input_label,  v[[i]])
       } else {
-        boxes[[i]] <- selectInput(input_id, input_label, v[[i]], v[[i]][1])
+        boxes[[i]] <- selectInput(input_id, input_label, sort(v[[i]]), v[[i]][1])
       }
 
     }
@@ -155,6 +164,7 @@ inspector.server <- function(input, output, clientData, session) {
     boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
 
     if(DD$precomputed){
+      boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal( material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
       boxes[[length(boxes)+ 1]] <-  tags$script(
            "$(document).on('change', 'select', function () {
                 Shiny.onInputChange('run', Math.random());
@@ -162,6 +172,12 @@ inspector.server <- function(input, output, clientData, session) {
                 // to report changes on the same selectInput
                 //Shiny.onInputChange('lastSelect', Math.random());
                 });")
+      boxes[[length(boxes) + 1]] <- tags$script("
+      $(document).ready(function(){
+        // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
+        $('.modal').modal()
+      });"
+      )
 
 
     }
@@ -267,6 +283,7 @@ inspector.server <- function(input, output, clientData, session) {
     }
 
     message("instantiating design...\n")
+    if(exists("DEBUG", globalenv())) browser()
     DD$design_instance <- do.call(design, DD$args)
 
     if(!is.null(attr(DD$design_instance, "diagnosis"))){
@@ -282,44 +299,56 @@ inspector.server <- function(input, output, clientData, session) {
                                       sims = as.numeric(input$d_sims),
                                       bootstrap_sims = as.numeric(input$d_draws))
     )
-    # bsCollapse(id="outputCollapse", open="Summary",
-    #            bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-    #            bsCollapsePanel("Citation", uiOutput("citationPanel")),
-    #            bsCollapsePanel("Diagnostics", uiOutput("diagnosticsPanel")),
-    #            bsCollapsePanel("Code", uiOutput("codePanel")),
-    #            bsCollapsePanel("Simulate", uiOutput("simulationPanel"))
-    # )
-    #
 
     # browser()
   })
 
 
     output$diagnosticsPanel <-    renderTable({
+      # message(Sys.time(), "a")
       diag_tab <- get_diagnosands(diagnosis = DD$diagnosis)
     # # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
     # diag_tab
+      # message(Sys.time(), "b")
+      # on.exit(message(Sys.time(), "c"))
       pretty_diagnoses(diag_tab)
     })
 
     output$diagnosticsPlot <- renderPlot({
+      # message(Sys.time(), "a")
       sims <- get_simulations(DD$diagnosis)
-      sims$covered <- sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper
+      if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
+      sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2, labels = c("OOB", "COV"))
+      sims$estimator_label <- as.factor(sims$estimator_label)
+      sims$estimand_label <- as.factor(sims$estimand_label)
 
-      lowest <- min(sims$est)
-      highest <- max(sims$est)
+      # message(Sys.time(), "b")
 
-      ggplot(sims) + aes(x=est) +
-        geom_density(aes(y=..count../mean(..count..)/4, fill=covered, group=covered), alpha=.4, position='stack') +
-        geom_errorbar(aes(ymin=ci_lower, ymax=ci_upper), alpha=.4) +
-        geom_point(aes(y=est)) +
-        geom_point(aes(y=estimand, col=covered)) +
+      # lowest <- min(sims$est)
+      # highest <- max(sims$est)
+      # browser()
+      # on.exit(message(Sys.time(), "exit"))
+
+      g <- ggplot(sims) + aes(x=est) +
+        # geom_density(aes(x=est, y=  (..count.. - min(..count..))/ (max(..count..) - min(..count..)) *   min(x),
+        #                  fill=covered, group=covered), alpha=.4, position='stack', color=NA) +
+        geom_errorbar(aes(ymin=ci_lower, ymax=ci_upper, color=covered), alpha=.4) +
+        # geom_point(aes(y=est), size=.5) +
+        # geom_point(aes(y=estimand, col=black), alpha=.8) +
+        geom_hline(aes(yintercept=mean(estimand))) +
         facet_wrap(estimand_label~estimator_label) +
-        xlab("") + ylab("Estimate") +
-        scale_color_discrete(labels=c("OOB", "Covered"), name="") +
-        scale_fill_discrete(guide=FALSE)+
+        ylab("Estimate") +
+        scale_x_continuous(labels=NULL, breaks = NULL, name='') +
+        scale_color_discrete(drop=FALSE, guide=FALSE) +
+        # scale_fill_discrete(guide=FALSE)+
+        # coord_fixed() +
         coord_flip()
+
+      # message(Sys.time(), "c")
+
+
+        print(g)
     })
 
     output$simulationPanel <-    renderDataTable({
@@ -328,7 +357,7 @@ inspector.server <- function(input, output, clientData, session) {
       # rownames(diag_tab) <- diag_tab$estimand_label
       sims_tab <- round_df(sims_tab, 4)
       sims_tab
-    }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, info = FALSE))
+    }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE))
 
     DD$code <- reactive({
       if(!is.null(attr(DD$design_instance, "code"))){
@@ -363,6 +392,13 @@ inspector.server <- function(input, output, clientData, session) {
       })
 
 
+    output$vignette <- renderUI({
+      if(!requireNamespace("base64enc")) return()
+      vig <- vignette(topic) # topic gets loaded to global environment via design library
+      vightml <- base64enc::base64encode(file.path(vig$Dir, "doc", vig$PDF))
+      vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
+      HTML(vightml)
+    })
 }
 
 

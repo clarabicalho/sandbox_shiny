@@ -253,9 +253,17 @@ buildStep <- function(step,i){
   card
 }
 
+default_builder <- list(list(type='declare_population', args='`N=100`,noise=rnorm(N)'),
+                        list(type='declare_potential_outcomes', args='Y_Z_0=noise, Y_Z_1=noise+1'),
+                        list(type='declare_estimand', args='ATE=mean(Y_Z_1 - Y_Z_0), label="ATE"'),
+                        list(type='declare_sampling', args='`n=20`'),
+                        list(type='declare_assignment', args='`m=10`'),
+                        list(type='reveal_outcomes', args=""),
+                        list(type='declare_estimator',  args='Y~Z, estimand="ATE"'))
+
 builder.server <- function(input, output, clientData, session) {
 
-  DD <- reactiveValues(steps=list(list(type='declare_population', args='`N=100`,noise=rnorm(N)')))
+  DD <- reactiveValues(steps=default_builder)
 
   tmpfile <- tempfile()
 
@@ -288,15 +296,14 @@ builder.server <- function(input, output, clientData, session) {
     # rownames(diag_tab) <- diag_tab$estimand_label
     sims_tab <- round_df(sims_tab, 4)
     sims_tab
-  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+  }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
 
-  output$diagnosisPanel <-    renderDataTable({
+  output$diagnosisPanel <-    renderTable({
     # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
-    sims_tab <- diagnose_design(design_instance(), sims = 5, bootstrap_sims = 5)
+    diagnosands <- get_diagnosands(diagnose_design(design_instance(), sims = 5, bootstrap_sims = 5))
     # rownames(diag_tab) <- diag_tab$estimand_label
-    sims_tab <- round_df(sims_tab, 4)
-    sims_tab
-  }, options = list(searching = FALSE, ordering = FALSE, paging = FALSE, info = FALSE))
+    pretty_diagnoses(diagnosands)
+  })
 
 
 
@@ -383,7 +390,7 @@ builder.server <- function(input, output, clientData, session) {
     },
     content = function(file) {
       # browser()
-      saveRDS(design_instance(), file)
+      saveRDS(template.fun(), file)
     })
 
 

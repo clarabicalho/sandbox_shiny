@@ -355,7 +355,7 @@ inspector.server <- function(input, output, clientData, session) {
       # rownames(diag_tab) <- diag_tab$estimand_label
       sims_tab <- round_df(sims_tab, 4)
       sims_tab
-    }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE))
+    }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
 
     DD$code <- reactive({
       if(!is.null(attr(DD$design_instance, "code"))){

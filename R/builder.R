@@ -263,6 +263,8 @@ default_builder <- list(list(type='declare_population', args='`N=100`,noise=rnor
 
 builder.server <- function(input, output, clientData, session) {
 
+  require(DeclareDesign)
+
   DD <- reactiveValues(steps=default_builder)
 
   tmpfile <- tempfile()

@@ -28,13 +28,59 @@ step_help_text = list(
       shiny::tags$dt("ID_label"),
       shiny::tags$dd("(optional) variable name for ID variable, i.e. citizen_ID")
     )
-    ),
-  "declare_potential_outcomes"=shiny::tags$div("PO"),
-  "declare_sampling"=shiny::tags$div("sampling"),
-  "declare_estimand"=shiny::tags$div("estimand"),
-  "declare_assignment"=shiny::tags$div("assign"),
-  "reveal_outcomes"=shiny::tags$div("reveal"),
-  "declare_estimator"=shiny::tags$div("estimator"))
+  ),
+  "declare_potential_outcomes"=shiny::tags$div(
+    shiny::tags$h5("Declare Potential Outcomes"),
+    shiny::tags$dl(
+      shiny::tags$dt("formula"),
+      shiny::tags$dd("eg formula = Y ~ .25 * Z + .01 * age * Z"),
+      shiny::tags$dt("assignment_variable_name"),
+      shiny::tags$dd("(optional) variable name for Outcomes (Z)"),
+      shiny::tags$dt("condition_names"),
+      shiny::tags$dd("(optional) conditions the assignment may take")
+    )
+  ),
+  "declare_sampling"=shiny::tags$div(
+    shiny::tags$h5("Declare Sampling Procedure"),
+    shiny::tags$dl(
+      shiny::tags$dt("n"),
+      shiny::tags$dd("Use for a design in which n units (or clusters) are sampled. In a stratified design, exactly n units in each stratum will be sampled. (optional)"),
+      shiny::tags$dt("prob / simple"),
+      shiny::tags$dd("(optional) Take a prob-% fixed-size sample or, if simple is TRUE, a SRS with prob")
+    )
+  ),
+  "declare_estimand"=shiny::tags$div(
+    shiny::tags$h5("Declare Estimand"),
+    shiny::tags$dl(
+      shiny::tags$dt("..."),
+      shiny::tags$dd("Named estimands"),
+      shiny::tags$dt("subset"),
+      shiny::tags$dd("(optional) A subset to calculate the estimand on"),
+      shiny::tags$dt("label"),
+      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
+    )
+
+  ),
+  "declare_assignment"=shiny::tags$div(
+    shiny::tags$h5("Declare Assignment"),
+    shiny::tags$dl(
+      shiny::tags$dt("m"),
+      shiny::tags$dd(	"Use for a two-arm design in which m units (or clusters) are assigned to treatment and N-m units (or clusters) are assigned to control. In a blocked design, exactly m units in each block will be treated. (optional)"),
+      shiny::tags$dt("m-each"),
+      shiny::tags$dd("Use for a multi-arm design in which the values of m_each determine the number of units (or clusters) assigned to each condition. m_each must be a numeric vector in which each entry is a nonnegative integer that describes how many units (or clusters) should be assigned to the 1st, 2nd, 3rd... treatment condition. m_each must sum to N. (optional)"),
+      shiny::tags$dt("label"),
+      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
+    )
+  ),
+  "reveal_outcomes"=shiny::tags$div(
+
+
+  ),
+  "declare_estimator"=shiny::tags$div(
+
+
+  )
+  )
 
 
 step_help_panels <- function(input){

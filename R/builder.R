@@ -537,7 +537,7 @@ builder.server <- function(input, output, clientData, session) {
 
   output$inspectLink <- renderUI({
 
-    tags$a(href=paste0("http://:8000/?file=", tmpfile), "Inspector")
+    tags$a(href=paste0("/?file=", tmpfile), "Inspector", onclick="javascript:event.target.port=8000")
 
   })
 

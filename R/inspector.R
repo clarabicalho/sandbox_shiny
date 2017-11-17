@@ -22,6 +22,18 @@ welcome <-         material_modal(
   uiOutput(outputId = "import_panel_choice", inline=FALSE)
 )
 
+dd_theme <-
+  function() {
+    theme_bw() +
+      theme(
+        axis.ticks = element_blank(),
+        axis.line = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major = element_line(color = '#eeeeee'),
+        strip.background = element_blank(),
+        legend.position = "bottom",
+        text = element_text(family = "Palatino"))
+  }
 
 
 welcome <- remove_close_button_from_modal(welcome)
@@ -348,7 +360,8 @@ inspector.server <- function(input, output, clientData, session) {
         scale_color_discrete(drop=FALSE, guide=FALSE) +
         # scale_fill_discrete(guide=FALSE)+
         # coord_fixed() +
-        coord_flip()
+        coord_flip() +
+        dd_theme()
 
       # message(Sys.time(), "c")
 

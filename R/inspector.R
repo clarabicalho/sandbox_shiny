@@ -114,7 +114,7 @@ inspector.ui <- material_page(
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") ,plotOutput("diagnosticsPlot")),
+        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") , plotOutput("diagnosticsPlot"), uiOutput("powerPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
         bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
@@ -281,7 +281,7 @@ inspector.server <- function(input, output, clientData, session) {
 
   observeEvent({
     input$run;
-
+    input$import_button
     },{
 
     message("Run Button Clicked;\n")
@@ -369,6 +369,41 @@ inspector.server <- function(input, output, clientData, session) {
         print(g)
     })
 
+    output$powerPanel <- renderUI({
+      if(!DD$precomputed) return()
+      plotOutput("powerPlot")
+    })
+    output$powerPlot <- renderPlot({
+
+      # browser()
+      N_formal <- eval(formals(DD$design)$N)
+
+      args <- DD$args
+
+      powerdf <- NULL
+
+      # browser()
+
+      for(N in N_formal){
+        args$N <- N
+        d <- tryCatch(do.call(DD$design, args), error=function(e) NULL)
+        if(is.null(d)) next;
+        diag <- get_diagnosands(diagnoser(d))
+        diag$N <- N
+        powerdf <- rbind.data.frame(powerdf, diag, stringsAsFactors = FALSE)
+      }
+
+
+      ggplot(powerdf) + aes(x=N, y=power, ymin=power-`se(power)`, ymax=power+`se(power)`,
+                            group=estimator_label, color=estimator_label, fill=estimator_label) +
+        geom_line() + geom_point() + geom_ribbon(alpha=.3) +
+        dd_theme() + facet_grid(~estimand_label) #+ scale_fill_discrete(guide=FALSE)
+
+
+
+    })
+
+
     output$simulationPanel <-    renderDataTable({
       # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
       sims_tab <- draw_data(DD$design_instance)
@@ -386,10 +421,11 @@ inspector.server <- function(input, output, clientData, session) {
     })
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))
-    output$summaryPanel  <- renderUI({
 
+    output$summaryPanel  <- renderUI({
       pretty_summary(summary(DD$design_instance))
-      })
+    })
+
     output$codePanel     <- renderText(DD$code())
 
 

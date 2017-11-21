@@ -109,21 +109,16 @@ steps_config <- list(
     # material_radio_button("sampling_type", "Sampling Strategy:",
     #              c("Fixed n", "Simple Random Sample")),
 
-    selectInput("sampling_type", "Sampling Type:", c("Fixed (n)"="n", "Fixed (p)"="p", "SRS (p)"="srs")),
-    numericInput("sampling_param", "", 0),
+    selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (proportion)"="p", "SRS (probability)"="srs")),
+    numericInput("sampling_param", "Param", 0),
 
-    {
-      m <- checkboxInput("sampling_block", "Block:", value = FALSE)
-      m$children[[1]]$children[[1]]$children[[2]]$name = "label"
-      m
-      },
-    uiOutput("sampling_block_chooser"),
 
-    {m <- material_checkbox("sampling_cluster", "Cluster:")
-      str(m,3)
+    material_checkbox("sampling_strata", "Strata:", FALSE),
 
-      m},#, initial_value = FALSE),
-    verbatimTextOutput("sampling_cluster_text"),
+    uiOutput("sampling_strata_chooser"),
+
+    material_checkbox("sampling_cluster", "Cluster:", FALSE),
+    # verbatimTextOutput("sampling_cluster_text"),
 
     uiOutput("sampling_cluster_chooser")
 
@@ -143,15 +138,58 @@ editor <- remove_close_button_from_modal(material_modal(modal_id="editor", butto
 
 editor[[2]][[1]] <- NULL# skip making outer button ...
 
-steps_dynamic <- list("declare_sampling"=function(input, output){
+steps_dynamic <- list("declare_sampling"=function(input, output, session, design_instance){
   # browser()
 
-  # output$sampling_block_chooser <- renderUI({if(isTRUE(input$sampling_block)) "foo"})
+  message("registering callbacks")
+
+  rvs <- reactiveValues(observers=list())
+
+  output$sampling_strata_chooser <- renderUI({
+    message("hiarylah");
+    if(isTRUE(input$sampling_strata))
+      make_variable_chooser("sampling_strata_variable", design_instance, input$sampling_strata_variable)
+  })
 
   # output$sampling_cluster_chooser <- renderUI({message("dfsa[", input$sampling_cluster, "]adfs\n");if(isTRUE(input$sampling_cluster))"foo"})
-  #
-  #
-  # output$sampling_cluster_text <- renderText(input$sampling_cluster)
+  output$sampling_cluster_chooser <- renderUI({
+    message("dfsa[", input$sampling_cluster, "]adfs\n");
+    if(isTRUE(input$sampling_cluster))
+      make_variable_chooser("sampling_cluster_variable", design_instance, input$sampling_cluster_variable)
+  })
+
+  update_options <- function(input, session){
+    options <-
+      sprintf("`%s=%s`", switch(input$sampling_type, srs="p", input$sampling_type), input$sampling_param)
+    if(isTRUE(input$sampling_type == "sts")) options <- paste(options, ", simple = TRUE")
+    if(isTRUE(input$sampling_cluster)) options <- paste(options, ", clust_var =", input$sampling_cluster_variable)
+    if(isTRUE(input$sampling_strata)) options <- paste(options, ", strata_var =", input$sampling_strata_variable)
+
+    updateTextInput(session, "edit_args", value=options)
+  }
+
+
+  # observeEvent({
+  #   input$sampling_type
+  #   input$sampling_param
+  #   input$sampling_cluster
+  #   input$sampling_block
+  #   input$sampling_cluster_variable
+  #   input$sampling_block_variable
+  # },{
+  #  update_options(input, session)
+  # })
+
+  # NJF 9/21 Above seems to not work although below does :(
+  observeEvent(input$sampling_type, update_options(input, session))
+  observeEvent(input$sampling_param, update_options(input, session))
+  observeEvent(input$sampling_cluster, update_options(input, session))
+  observeEvent(input$sampling_strata, update_options(input, session))
+  observeEvent(input$sampling_cluster_variable, update_options(input, session))
+  observeEvent(input$sampling_strata_variable, update_options(input, session))
+
+
+
 })
 
 builder.ui <- material_page(
@@ -213,7 +251,11 @@ builder.ui <- material_page(
                                  shiny::tags$p("Number of simulations: 5"),
                                  shiny::tags$p("Number of bootstrap draws: 10"),
                                  tableOutput("diagnosisPanel")),
-                 bsCollapsePanel("About", "About DDbuilder...")
+                 bsCollapsePanel("About",
+                                 h5("About the DeclareDesign Inspector"),
+                                 p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
+                                 p("This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
+                 )
                  # bsCollapsePanel("Export", "export here")
       )
       )
@@ -414,7 +456,7 @@ builder.server <- function(input, output, clientData, session) {
 
     session$sendCustomMessage(type = "closeModal", "#editor")
 
-    message("B:[", input$sampling_block, "] T:[", input$sampling_type, "]\n")
+    message("Strata:[", input$sampling_strata, "] T:[", input$sampling_strata_chooser, "]\n")
 
   })
 
@@ -459,7 +501,7 @@ builder.server <- function(input, output, clientData, session) {
     step <-DD$steps[[i]]
     message(i, step, "\n\n\n[", input$edit_type, "]\n")
 
-    if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output)
+    if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output, session, design_instance())
 
     material_card("",
       selectInput("edit_type", "Type:", steps_funs, step$type),
@@ -502,23 +544,15 @@ builder.server <- function(input, output, clientData, session) {
 
   #### step options
 
-  output$sampling_block_chooser <- renderUI({
-    message("hiarylah");
-    if(isTRUE(input$sampling_block))
-      make_variable_chooser("sampling_block_variable", design_instance(), "sampling_block_variable")
-    })
-
-  output$sampling_cluster_chooser <- renderUI({message("dfsa[", input$sampling_cluster, "]adfs\n");if(isTRUE(input$sampling_cluster))"foo"})
 
 
-  output$sampling_cluster_text <- renderText(input$sampling_cluster)
 
 }
 
 
 make_variable_chooser <- function(id, design_instance, selected) {
-  variables <- colNames(draw_data(design_instance))
-  selectInput(id, "Variable:", variables, input[[selected]])
+  variables <- colnames(draw_data(design_instance))
+  selectInput(id, "Variable:", variables, selected)
 }
 
 

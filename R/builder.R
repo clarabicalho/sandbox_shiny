@@ -198,6 +198,7 @@ builder.ui <- material_page(
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
+  includeCSS(system.file("css/materialize.css", package="DDshiny")),
 #  shiny::includeScript(system.file(file.path("js", "shiny-material-checkbox.js"), package = "shinymaterial")),
 
   bootstrapLib(),
@@ -456,7 +457,7 @@ builder.server <- function(input, output, clientData, session) {
 
     session$sendCustomMessage(type = "closeModal", "#editor")
 
-    message("Strata:[", input$sampling_strata, "] T:[", input$sampling_strata_chooser, "]\n")
+    #message("Strata:[", input$sampling_strata, "] T:[", input$sampling_strata_chooser, "]\n")
 
   })
 

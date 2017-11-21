@@ -1,11 +1,6 @@
 # require(shiny); require(shinyBS); require(shinymaterial); require(DeclareDesign)
 # round_df <- DDshiny:::round_df
 
-my_tipify <- function(txtbox, tip){
-  txtbox[[2]]$class <- paste(txtbox[[2]]$class, "tooltipped")
-  txtbox[[2]][["data-tooltip"]] <- tip
-  txtbox
-}
 
 ####
 ####  Welcome page

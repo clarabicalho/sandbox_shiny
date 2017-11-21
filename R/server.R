@@ -4,24 +4,6 @@
 NULL
 
 
-remove_spaces <- function(text){
-   str_replace_all(str_trim(text), "\\s+", " ")
-}
-
-convert_character_to_vector <- function(text){
-  text <- str_trim(unlist(strsplit(text, split = ",")))
-  if(identical(as.character(as.numeric(text)), text)){
-    return(as.numeric(text))
-  } else {
-    return(text)
-  }
-}
-
-round_df <- function(df, digits){
-  i <- vapply(df, is.numeric, TRUE)
-  df[i] <- lapply(df[i], round, digits)
-  df
-}
 
 # Define server logic required to draw a histogram
 server <- function(input, output, clientData, session) {

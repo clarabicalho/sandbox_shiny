@@ -1,3 +1,5 @@
+### File is name aaa to note have to manually specify file collation - we will just use A-Z ordering. -- NJF 11/21
+
 ### Small bits of global config
 nav_bar_color = "green lighten-3"
 
@@ -170,4 +172,29 @@ remove_close_button_from_modal <- function(modal){
   modal
 }
 
+my_tipify <- function(txtbox, tip){
+  txtbox[[2]]$class <- paste(txtbox[[2]]$class, "tooltipped")
+  txtbox[[2]][["data-tooltip"]] <- tip
+  txtbox
+}
+
+
+remove_spaces <- function(text){
+  str_replace_all(str_trim(text), "\\s+", " ")
+}
+
+convert_character_to_vector <- function(text){
+  text <- str_trim(unlist(strsplit(text, split = ",")))
+  if(identical(as.character(as.numeric(text)), text)){
+    return(as.numeric(text))
+  } else {
+    return(text)
+  }
+}
+
+round_df <- function(df, digits){
+  i <- vapply(df, is.numeric, TRUE)
+  df[i] <- lapply(df[i], round, digits)
+  df
+}
 

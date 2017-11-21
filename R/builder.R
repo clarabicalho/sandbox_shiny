@@ -1,4 +1,6 @@
-nav_bar_color = "green lighten-3"
+
+js="Shiny.onInputChange('%s', %d)"
+
 
 steps_funs <- setNames(c(
     "declare_population",
@@ -82,174 +84,75 @@ step_help_text = list(
   )
   )
 
+#
+# step_help_panels <- function(input){
+#   out <- shiny::tags$div()
+# #  browser()
+#
+#   for(sf in steps_funs) {
+#     condition <- sprintf("input.%s == '%s'", input, sf)
+#     # message(condition)
+#     cp <- conditionalPanel(
+#       condition = condition,
+#     )
+#     out$children <- append(out$children, list(cp))
+#   }
+#
+#   out
+# }
 
-step_help_panels <- function(input){
-  out <- shiny::tags$div()
-#  browser()
+steps_config <- list(
+  "declare_population"="Population",
+  "declare_potential_outcomes"="",
+  "declare_sampling"= shiny::tags$div(
 
-  for(sf in steps_funs) {
-    condition <- sprintf("input.%s == '%s'", input, sf)
-    # message(condition)
-    cp <- conditionalPanel(
-      condition = condition,
-      step_help_text[[sf]]
-      )
-    out$children <- append(out$children, list(cp))
-  }
+    # material_radio_button("sampling_type", "Sampling Strategy:",
+    #              c("Fixed n", "Simple Random Sample")),
 
-  out
-}
+    selectInput("sampling_type", "Sampling Type:", c("Fixed (n)"="n", "Fixed (p)"="p", "SRS (p)"="srs")),
+    numericInput("sampling_param", "", 0),
 
-pretty_diagnoses <- function(df, digits=4){
-  require(reshape2)
+    {
+      m <- checkboxInput("sampling_block", "Block:", value = FALSE)
+      m$children[[1]]$children[[1]]$children[[2]]$name = "label"
+      m
+      },
+    uiOutput("sampling_block_chooser"),
 
-  ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
-  names(ret) <- str_replace(str_to_title(names(ret)), "_.*", "")
+    {m <- material_checkbox("sampling_cluster", "Cluster:")
+      str(m,3)
 
-  ids <- names(ret)
+      m},#, initial_value = FALSE),
+    verbatimTextOutput("sampling_cluster_text"),
 
-  data_columns <- names(df)
-  data_columns <- data_columns[grep('^se[(]|_label$|_ID$', data_columns, invert = TRUE)]
+    uiOutput("sampling_cluster_chooser")
 
-  myfmt <- sprintf('%%.%if', digits)
 
-  for(col in data_columns) {
-    title <- str_to_title(str_replace_all(col, '_', ' '))
-    x <- sprintf(myfmt, df[[col]])
-    secol <- sprintf('se(%s)', col)
-    if( secol %in% names(df)) {
-      se <- sprintf(myfmt, df[[secol]])
-      x <- sprintf(paste('%s(%s)'), x, se)
-    }
-    ret[[title]] <- x
-  }
+  ),
+  "declare_estimand"="",
+  "declare_assignment"="",
+  "reveal_outcomes"="",
+  "declare_estimator"="")
 
-  ret <- melt(ret, ids, variable.name="Diagnosand")
+#### Editor dialog
+editor <- remove_close_button_from_modal(material_modal(modal_id="editor", button_text="Edit...", title="Editing",
+                                                        uiOutput("step_editor")
+))
 
-  if('Design' %in% ids){
-    ret <- dcast(ret, ...~Design, value.var = "value")
+# editor[[2]][[1]]$attribs[["style"]] <- "display:inline;" # Yuck #TODO add class, write CSS rule
 
-  }
-  ret
-}
+editor[[2]][[1]] <- NULL# skip making outer button ...
 
-pretty_summary <- function(x) {
+steps_dynamic <- list("declare_sampling"=function(input, output){
   # browser()
 
-  step_summary <- with(x,
-                       mapply(pretty_summary_step, seq_along(causal_order_expr), variables_added, variables_modified, quantities_added, causal_order_expr, function_types, N, formulae,
-                              SIMPLIFY = FALSE)
-  )
+  # output$sampling_block_chooser <- renderUI({if(isTRUE(input$sampling_block)) "foo"})
 
-
-  ret <- shiny::tags$div(
-    # shiny::tags$header("Design Summary"),
-
-
-
-  if (!is.null(x$title)) {
-    shiny::tags$p("Study title: ", x$title)
-  },
-
-  if (!is.null(x$authors)) {
-    shiny::tags$p("Authors: ", x$authors)
-  },
-
-  if (!is.null(x$description)) {
-    shiny::tags$p(x$description)
-  },
-
-  step_summary,
-
-
-  if (!is.null(x$citation)) {
-    shiny::tags$p("Citation:", shiny::tags$br, x$citation)
-  }
-  )
-
-
-
-  ret
-}
-
-pretty_summary_step <- function(i, variables_added, variables_modified, quantities_added, causal_order_expr, function_types, N, formulae) {
-
-    step_name <- deparse(causal_order_expr)
-    step_class <-
-      ifelse(
-        function_types != "unknown",
-        gsub("_", " ", function_types),
-        "custom data modification"
-      )
-
-
-    ret <- material_card(
-      paste("Step", i, "(", step_class, "):", step_name),
-
-      if (!is.null(N)) {
-        shiny::tags$p(N)
-      },
-
-      if (!is.null(formulae)) {
-        shiny::tags$p("Formula:", deparse(formula))
-      },
-
-      if (!is.null(quantities_added)) {
-        if (class(quantities_added) == "data.frame") {
-          shiny::tags$p(
-            "A single draw of the ", function_types, ":\n",
-
-            HTML(renderTable(quantities_added)())
-            )
-        } else {
-          shiny::tags$p(as.character(quantities_added))
-        }
-      },
-
-      if (!is.null(variables_added)) {
-        lapply(seq_along(variables_added), function(j){
-          shiny::tags$p(
-            "Added variable:",
-            names(variables_added)[j],
-            shiny::tags$br(),
-            HTML(renderTable(variables_added[[j]])())
-            )
-        })
-      },
-
-      if (!is.null(variables_modified)) {
-        lapply(seq_along(variables_modified), function(j){
-          shiny::tags$p(
-            "Altered variable:",
-            names(variables_modified)[j],
-            shiny::tags$br(),
-            "Before:",
-            HTML(renderTable(variables_modified[[j]][["before"]])()),
-            shiny::tags$br(),
-            "After",
-            HTML(renderTable(variables_modified[[j]][["after"]])())
-            )
-        })
-      }
-
-    )
-
-
-  ret
-
-
-}
-
-
-
-remove_close_button_from_modal <- function(modal){
-  #TODO this is nasty
-  closebutton <- modal[[2]][[2]]$children[[2]] # save close button for latter
-  modal[[2]][[2]]$children[[2]] <- NULL # skip close button in modal dialog
-  modal[[2]][[2]]$children[[1]]$attribs$style="box-shadow:none; border:none;"
-
-  modal
-}
+  # output$sampling_cluster_chooser <- renderUI({message("dfsa[", input$sampling_cluster, "]adfs\n");if(isTRUE(input$sampling_cluster))"foo"})
+  #
+  #
+  # output$sampling_cluster_text <- renderText(input$sampling_cluster)
+})
 
 builder.ui <- material_page(
   title = "Design Builder",
@@ -257,15 +160,22 @@ builder.ui <- material_page(
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
+#  shiny::includeScript(system.file(file.path("js", "shiny-material-checkbox.js"), package = "shinymaterial")),
+
   bootstrapLib(),
   # handler to receive data from server
   tags$script('
+  Shiny.addCustomMessageHandler("openModal",
+        function(name) {
+          $(name).modal("open");
+        });
+
   Shiny.addCustomMessageHandler("closeModal",
         function(name) {
           $(name).modal("close");
         });
   '),
-
+  uiOutput("editor_modal"),
   material_row(
     material_column(
       width=4,
@@ -277,15 +187,14 @@ builder.ui <- material_page(
       ),
       # material_button("add_step", "Add Step", icon="add_box"),
       # actionButton("add_step", "[+] Add Step"),
-      remove_close_button_from_modal(
-      material_modal(modal_id="add_step", button_text="Add Step", title="New Step",
-                     selectInput("add_type", "Type:", steps_funs),
-                     textInput("add_args", "Options"),
-                     step_help_panels("add_type"),
-                     actionButton("save_add_step", "Save"),
-                     actionButton("cancel_add_step", "Cancel")
-                     # uiOutput("add_step_closer")
-       )),
+      # remove_close_button_from_modal(
+      # material_modal(modal_id="add_step", button_text="Add Step", title="New Step",
+      #                selectInput("add_type", "Type:", steps_funs),
+      #                textInput("add_args", "Options"),
+      #                step_help_panels("add_type"),
+      #                actionButton("save_add_step", "Save"),
+      #                actionButton("cancel_add_step", "Cancel")
+      #  )),
       tags$br(),
       downloadButton("download_design", "Export Design"),
       uiOutput("inspectLink")
@@ -300,9 +209,9 @@ builder.ui <- material_page(
                  bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                                  downloadButton("download_code", "Export Code...")),
                  bsCollapsePanel("Simulate Data", dataTableOutput("simulationPanel")),
-                 bsCollapsePanel("Quick Diagnosis ", "Diagnosis",
-                                 paste("Number of simulations: 5"),
-                                 paste("Number of draws: 10"),
+                 bsCollapsePanel("Quick Diagnosis ",
+                                 shiny::tags$p("Number of simulations: 5"),
+                                 shiny::tags$p("Number of bootstrap draws: 10"),
                                  tableOutput("diagnosisPanel")),
                  bsCollapsePanel("About", "About DDbuilder...")
                  # bsCollapsePanel("Export", "export here")
@@ -318,25 +227,12 @@ builder.ui <- material_page(
 buildStep <- function(step,i){
   js="Shiny.onInputChange('%s', %d)"
 
-  editor <- remove_close_button_from_modal(material_modal(modal_id=paste0("edit_step_",i), button_text="Edit...", title="Editing",
-                                                          selectInput(sprintf("edit_%d_type", i), "Type:", steps_funs, step$type),
-                                                          textInput(sprintf("edit_%d_args", i), "Options", step$args),
-                                                          step_help_panels(sprintf("edit_%d_type", i)),
-                                                          actionButton(sprintf("edit_%d_save", i), "Save", onclick=sprintf(js, "edit_save", i)),
-                                                          actionButton(sprintf("edit_%d_cancel", i), "Cancel", onclick=sprintf(js, "edit_cancel", i)),
-                                                          actionButton(sprintf("edit_%d_delete", i), "Delete", onclick=sprintf(js, "edit_delete", i)),
-                                                          uiOutput(sprintf("edit_%d_closer", i))
-  ))
-
-  #browser()
-  editor[[2]][[1]]$attribs[["style"]] <- "display:inline;" # Yuck #TODO add class, write CSS rule
-
-
   card <- material_card(title=steps_labels[step$type],
                         shiny::tags$div(step$args),
                         actionButton(sprintf("edit_%i_up", i), "\U25B4", onclick=sprintf(js, "edit_up", i)),
                         actionButton(sprintf("edit_%i_down", i), "\U25BE", onclick=sprintf(js, "edit_down", i)),
-                        editor
+                        actionButton(sprintf("editor_%i", i), "Edit...", onclick=sprintf(js, "edit_open", i),
+                                     `data-target`="editor", class="waves-effect waves-light shiny-material-modal-trigger btn")
                         )
 
 
@@ -355,7 +251,9 @@ builder.server <- function(input, output, clientData, session) {
 
   require(DeclareDesign)
 
-  DD <- reactiveValues(steps=default_builder)
+  set.seed(20171121) # For Demo TODO
+
+  DD <- reactiveValues(steps=default_builder, editing=-1)
 
   tmpfile <- tempfile()
 
@@ -488,35 +386,55 @@ builder.server <- function(input, output, clientData, session) {
 
   ################# editer observers
 
-  observeEvent(input$edit_cancel,{
-    i <- input$edit_cancel
+  observeEvent(input$edit_open,{
 
-    session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+    DD$editing <- input$edit_open
+
+    message("Editing ", DD$editing, "\n")
+
+    step <-DD$steps[[DD$editing]]
+    updateSelectInput(session, "edit_type", selected=step$type)
+    updateTextInput(session, "edit_args", value=step$args)
+
+    # ))
+
+    session$sendCustomMessage(type = "openModal", "#editor")
+
+
+  })
+
+
+  observeEvent(input$edit_cancel,{
+    i <- DD$editing
+
+
+    step <-DD$steps[[DD$editing]]
+    updateSelectInput(session, "edit_type", selected=step$type)
+    updateTextInput(session, "edit_args", value=step$args)
+
+    session$sendCustomMessage(type = "closeModal", "#editor")
+
+    message("B:[", input$sampling_block, "] T:[", input$sampling_type, "]\n")
 
   })
 
   observeEvent(input$edit_delete, {
-               i <- input$edit_delete
-               session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+     i <- DD$editing
+     session$sendCustomMessage(type = "closeModal", "#editor")
 
-     message("deleting...\n")
+     message("deleting... ", i, "\n")
      DD$steps[[i]] <- NULL
 
   })
 
   observeEvent(input$edit_save, {
-     i <- input$edit_save
-     w <- list(type=input[[sprintf("edit_%d_type", i)]], args=input[[sprintf("edit_%d_args", i)]])
+     i <- DD$editing
+     w <- list(type=input[["edit_type"]], args=input[["edit_args"]])
 
-     session$sendCustomMessage(type = "closeModal", sprintf("#edit_%d_closer", i))
+     session$sendCustomMessage(type = "closeModal", "#editor")
 
-     # output[[]] <- renderUI({
-     #             tags$script(sprintf("
-     #                $(document).ready(function(){
-     #                  $('#edit_step_%d').modal('close');
-     #                });", i))
-     #           })
      DD$steps[[i]] <- w
+     DD$steps <- DD$steps #forces refresh
 
   })
 
@@ -535,6 +453,45 @@ builder.server <- function(input, output, clientData, session) {
   })
 
 
+  output$step_editor <- renderUI({
+      input$edit_open
+    i <- DD$editing
+    step <-DD$steps[[i]]
+    message(i, step, "\n\n\n[", input$edit_type, "]\n")
+
+    if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output)
+
+    material_card("",
+      selectInput("edit_type", "Type:", steps_funs, step$type),
+      textInput("edit_args", "Options", step$args),
+      uiOutput("step_detail_tabs"),
+      actionButton("edit_save", "Save"),
+      actionButton("edit_cancel", "Cancel"),
+      actionButton("edit_delete", "Delete")
+    )
+  })
+
+
+  output$step_detail_tabs <- renderUI({
+    x <- steps_config[[input$edit_type]]
+    # message(ifelse(steps_config[[input$edit_type]] == "", 'h', 'c'), "\n")
+    tabsetPanel(selected = ifelse(identical(x, ""), 'h', 'c'),
+                tabPanel("Configure", value='c', x),
+                tabPanel("Help", value='h', step_help_text[[input$edit_type]])
+    )
+  })
+
+  output$editor_modal <- renderUI(editor)
+
+
+
+  # output$test_test <- renderUI("test test test")
+
+
+
+
+  ### For clicking in to inspector
+
   output$inspectLink <- renderUI({
 
     tags$a(href=paste0("/?file=", tmpfile), "Inspector", onclick="javascript:event.target.port=8000")
@@ -543,8 +500,26 @@ builder.server <- function(input, output, clientData, session) {
 
 
 
+  #### step options
+
+  output$sampling_block_chooser <- renderUI({
+    message("hiarylah");
+    if(isTRUE(input$sampling_block))
+      make_variable_chooser("sampling_block_variable", design_instance(), "sampling_block_variable")
+    })
+
+  output$sampling_cluster_chooser <- renderUI({message("dfsa[", input$sampling_cluster, "]adfs\n");if(isTRUE(input$sampling_cluster))"foo"})
+
+
+  output$sampling_cluster_text <- renderText(input$sampling_cluster)
+
 }
 
+
+make_variable_chooser <- function(id, design_instance, selected) {
+  variables <- colNames(draw_data(design_instance))
+  selectInput(id, "Variable:", variables, input[[selected]])
+}
 
 
 #' @export

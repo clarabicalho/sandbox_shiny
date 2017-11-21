@@ -19,21 +19,8 @@ welcome <-         material_modal(
   actionButton("import_library", "Import from library..."),
   actionButton("import_file", "Import from file..."),
   actionButton("import_url", "Import from url..."),
-  uiOutput(outputId = "import_panel_choice", inline=FALSE)
+  uiOutput("import_panel_choice")
 )
-
-dd_theme <-
-  function() {
-    theme_bw() +
-      theme(
-        axis.ticks = element_blank(),
-        axis.line = element_blank(),
-        panel.border = element_blank(),
-        panel.grid.major = element_line(color = '#eeeeee'),
-        strip.background = element_blank(),
-        legend.position = "bottom",
-        text = element_text(family = "Palatino"))
-  }
 
 
 welcome <- remove_close_button_from_modal(welcome)

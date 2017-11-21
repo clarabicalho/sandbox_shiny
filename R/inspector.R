@@ -101,11 +101,16 @@ inspector.ui <- material_page(
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
-        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") , plotOutput("diagnosticsPlot"), uiOutput("powerPanel")),
+        bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") , plotOutput("diagnosticsPlot")),
+        bsCollapsePanel("Power", uiOutput("powerPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                         downloadButton("download_code", "Export Code...")),
-        bsCollapsePanel("Simulate", dataTableOutput("simulationPanel")),
-        bsCollapsePanel("About", "About Declare design...")
+        bsCollapsePanel("Simulated Data", dataTableOutput("simulationPanel")),
+        bsCollapsePanel("About DeclareDesign Inspector",
+                        # h5("About the DeclareDesign Inspector"),
+                        p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
+                        p("  This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
+        )
 
       )
       # shiny::tags$h1("Output2")
@@ -383,7 +388,9 @@ inspector.server <- function(input, output, clientData, session) {
 
       ggplot(powerdf) + aes(x=N, y=power, ymin=power-`se(power)`, ymax=power+`se(power)`,
                             group=estimator_label, color=estimator_label, fill=estimator_label) +
-        geom_line() + geom_point() + geom_ribbon(alpha=.3) +
+        geom_line() +
+        geom_point() +
+        geom_ribbon(alpha=.3) +
         dd_theme() + facet_grid(~estimand_label) #+ scale_fill_discrete(guide=FALSE)
 
 
@@ -403,7 +410,8 @@ inspector.server <- function(input, output, clientData, session) {
       if(!is.null(attr(DD$design_instance, "code"))){
         attr(DD$design_instance, "code")
       } else if(requireNamespace("pryr")){
-        paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+        code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$args)), collapse="\n")
+        gsub("[{]\n|\n[}]", "", code) # remove surounding curly
       }
     })
 

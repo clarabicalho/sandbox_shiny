@@ -30,24 +30,21 @@ steps_config <- shiny::tags$div(
 steps_dynamic <- function(input, output, session){
 
 
-  update_options <- function(input, session){
+  update_options <- function(){
 
     options <- paste(collapse=", ", c(
-      input$estimand_options,
-      if(input$estimand_subset   != "") sprintf("subset=%s", input$estimand_subset),
-      if(input$estimand_label    != "") sprintf("label='%s'", input$estimand_label),
-      if(input$estimand_function != "") sprintf("estimand_function=%s", input$estimand_function)
+      input$estimand_formula,
+      if(input$estimator_model         != "") sprintf("model=%s", input$estimand_subset),
+      if(input$estimator_coefficient   != "") sprintf("coefficient_name='%s'", input$estimand_label),
+      if(input$estimator_estimand      != "") sprintf("estimand='%s'", input$estimator_estimand),
+      if(input$estimator_label         != "") sprintf("label='%s'", input$estimator_label)
     ))
 
 
     updateTextInput(session, "edit_args", value=options)
   }
 
-  # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$estimand_options,    update_options(input, session))
-  observeEvent(input$estimand_subset,     update_options(input, session))
-  observeEvent(input$estimand_label,      update_options(input, session))
-  observeEvent(input$estimand_function,   update_options(input, session))
+  observe_i_and_update(update_options, input, "estimator_", "formula", "model", "coefficient", "estimand", "label")
 }
 
 

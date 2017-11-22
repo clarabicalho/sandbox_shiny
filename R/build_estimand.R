@@ -8,7 +8,7 @@ step_help_text <- shiny::tags$div(
     shiny::tags$dt("subset"),
     shiny::tags$dd("(optional) A subset to calculate the estimand on"),
     shiny::tags$dt("label"),
-    shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
+    shiny::tags$dd("(optional) A label for the estimand if not specified via ...")
   )
 
 )
@@ -17,7 +17,7 @@ step_help_text <- shiny::tags$div(
 steps_config <- shiny::tags$div(
 
   textInput("estimand_options", "Estimand"),
-  textInput("estimand_subset", "subset", ""),
+  textInput("estimand_subset", "Subset", ""),
   textInput("estimand_label", "Label", ""),
   textInput("estimand_function", "Custom Estimand Function", "")
 )
@@ -26,7 +26,7 @@ steps_config <- shiny::tags$div(
 steps_dynamic <- function(input, output, session){
 
 
-  update_options <- function(input, session){
+  update_options <- function(){
 
     options <- paste(collapse=", ", c(
                  input$estimand_options,
@@ -35,15 +35,11 @@ steps_dynamic <- function(input, output, session){
                  if(input$estimand_function != "") sprintf("estimand_function=%s", input$estimand_function)
     ))
 
-
     updateTextInput(session, "edit_args", value=options)
   }
 
-  # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$estimand_options,    update_options(input, session))
-  observeEvent(input$estimand_subset,     update_options(input, session))
-  observeEvent(input$estimand_label,      update_options(input, session))
-  observeEvent(input$estimand_function,   update_options(input, session))
+  observe_i_and_update(update_options, input, "estimand_", "options", "subset", "label", "function")
+
 }
 
 

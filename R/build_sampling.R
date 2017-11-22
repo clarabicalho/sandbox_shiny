@@ -49,7 +49,7 @@ server <- function(input, output, session){
       make_variable_chooser("sampling_cluster_variable", session$userData$DD$design_instance(), input$sampling_cluster_variable)
   })
 
-  update_options <- function(input, session){
+  update_options <- function(){#input, session){
     options <- sprintf("`%s=%s`",
                        switch(input$sampling_type, srs="p", input$sampling_type),
                        input$sampling_param)
@@ -61,18 +61,8 @@ server <- function(input, output, session){
     updateTextInput(session, "edit_args", value=options)
   }
 
-  # NJF 9/21 Above seems to not work although below does :(
-  for(i in paste0("sampling_", c("type", "param", "cluster", "strata", "cluster_variable", "strata_variable")))
-    local({
-      i <- i
-      observeEvent(input[[i]], update_options(input, session))
-    })
-  # observeEvent(input$sampling_type, update_options(input, session))
-  # observeEvent(input$sampling_param, update_options(input, session))
-  # observeEvent(input$sampling_cluster, update_options(input, session))
-  # observeEvent(input$sampling_strata, update_options(input, session))
-  # observeEvent(input$sampling_cluster_variable, update_options(input, session))
-  # observeEvent(input$sampling_strata_variable, update_options(input, session))
+  observe_i_and_update(update_options, input, "sampling_", "type", "param", "cluster", "strata", "cluster_variable", "strata_variable")
+
 }
 
 list(

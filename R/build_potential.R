@@ -35,7 +35,7 @@ steps_dynamic <- function(input, output, session){
   })
 
 
-  update_options <- function(input, session){
+  update_options <- function(){
 
     options <- sprintf ("%s~%s(%s%s)",  input$potential_outcome_name,
                         switch(input$potential_type, Binary="draw_binary", Likert="draw_discrete", "Normal"="rnorm"),
@@ -50,10 +50,7 @@ steps_dynamic <- function(input, output, session){
   }
 
   # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$potential_type, update_options(input, session))
-  observeEvent(input$potential_outcome_name, update_options(input, session))
-  observeEvent(input$potential_condition_variable, update_options(input, session))
-  observeEvent(input$potential_condition_names, update_options(input, session))
+  observe_i_and_update(update_options, input, "potential_", "type", "outcome_name", "condition_variable", "condition_names")
 }
 
 

@@ -58,7 +58,7 @@ steps_dynamic <- function(input, output, session){
       make_variable_chooser("assignment_cluster_variable", session$userData$DD$design_instance(), input$assignment_cluster_variable)
   })
 
-  update_options <- function(input, session){
+  update_options <- function(){
     options <- sprintf("%s=%s",
                        switch(input$assignment_type, sra="prob_each", input$assignment_type),
                        input$assignment_param)
@@ -71,13 +71,8 @@ steps_dynamic <- function(input, output, session){
     updateTextInput(session, "edit_args", value=options)
   }
 
-  # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$assignment_type, update_options(input, session))
-  observeEvent(input$assignment_param, update_options(input, session))
-  observeEvent(input$assignment_cluster, update_options(input, session))
-  observeEvent(input$assignment_block, update_options(input, session))
-  observeEvent(input$assignment_cluster_variable, update_options(input, session))
-  observeEvent(input$assignment_block_variable, update_options(input, session))
+  observe_i_and_update(update_options, input, "assignment_", "type", "param", "cluster", "block", "cluster_variable", "block_variable")
+
 }
 
 list(

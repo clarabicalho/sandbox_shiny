@@ -28,6 +28,17 @@ steps_order <- c(
 )
 
 
+observe_i_and_update <- function(update_options, input, root, ...){
+  # browser()
+  for(i in paste0(root, c(...)))
+    local({
+      i <- i
+      observeEvent(input[[i]], update_options(), ignoreNULL = TRUE, ignoreInit = TRUE)
+    })
+
+}
+
+
 step_obj <- list()
 
 

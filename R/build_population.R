@@ -37,7 +37,7 @@ steps_dynamic <- function(input, output, session){
 
   output$population_builder_hierarchical <- renderUI("TBD2")
 
-  update_options <- function(input, session){
+  update_options <- function(){
 #
 #     options <- c(outcome_variable_names=input$reveal_outcome_variable_names,
 #                  assignment_variable_names=input$reveal_assignment_variable_names,
@@ -50,11 +50,8 @@ steps_dynamic <- function(input, output, session){
     updateTextInput(session, "edit_args", value=options)
   }
 
-  # NJF 9/21 Above seems to not work although below does :(
-  # observeEvent(input$reveal_outcome_variable_names,    update_options(input, session))
-  # observeEvent(input$reveal_assignment_variable_names, update_options(input, session))
-  # observeEvent(input$reveal_attrition_variable_name,   update_options(input, session))
-  # observeEvent(input$reveal_outcome_function,          update_options(input, session))
+  observe_i_and_update(update_options, input, "population_")
+
 }
 
 

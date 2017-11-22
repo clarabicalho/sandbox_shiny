@@ -50,17 +50,7 @@ step_help_text = list(
       shiny::tags$dd("(optional) variable name for ID variable, i.e. citizen_ID")
     )
   ),
-  "declare_potential_outcomes"=shiny::tags$div(
-    shiny::tags$h5("Declare Potential Outcomes"),
-    shiny::tags$dl(
-      shiny::tags$dt("formula"),
-      shiny::tags$dd("eg formula = Y ~ .25 * Z + .01 * age * Z"),
-      shiny::tags$dt("assignment_variable_name"),
-      shiny::tags$dd("(optional) variable name for Outcomes (Z)"),
-      shiny::tags$dt("condition_names"),
-      shiny::tags$dd("(optional) conditions the assignment may take")
-    )
-  ),
+
   "declare_estimand"=shiny::tags$div(
     shiny::tags$h5("Declare Estimand"),
     shiny::tags$dl(

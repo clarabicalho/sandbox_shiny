@@ -93,6 +93,7 @@ inspector.ui <- material_page(
       width = 8,
       # offset=6,
       material_card("Output",
+      uiOutput("descriptionPanel"),
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
         bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
@@ -409,6 +410,9 @@ inspector.server <- function(input, output, clientData, session) {
         gsub("[{]\n|\n[}]", "", code) # remove surounding curly
       }
     })
+
+    output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
+
 
     output$citationPanel <- renderPrint(cite_design(DD$design_instance))
 

@@ -224,8 +224,8 @@ builder.ui <- material_page(
       shiny::tags$div(style="overflow-y: scroll; height: 500px",
         uiOutput("cards")
       ),
-      # material_button("add_step", "Add Step", icon="add_box"),
-      # actionButton("add_step", "[+] Add Step"),
+      # material_button("add_step", "Add Step"),#, icon="add_box"),
+      actionButton("add_step", "[+] Add Step", `data-target`="editor", class="waves-effect waves-light shiny-material-modal-trigger btn"),
       # remove_close_button_from_modal(
       # material_modal(modal_id="add_step", button_text="Add Step", title="New Step",
       #                selectInput("add_type", "Type:", steps_funs),
@@ -234,7 +234,7 @@ builder.ui <- material_page(
       #                actionButton("save_add_step", "Save"),
       #                actionButton("cancel_add_step", "Cancel")
       #  )),
-      tags$br(),
+      #tags$br(),
       downloadButton("download_design", "Export Design"),
       uiOutput("inspectLink")
       )
@@ -296,7 +296,7 @@ builder.server <- function(input, output, clientData, session) {
 
   set.seed(20171121) # For Demo TODO
 
-  DD <- reactiveValues(steps=default_builder, editing=-1)
+  DD <- reactiveValues(steps=default_builder, editing=-1, add=FALSE)
 
   tmpfile <- tempfile()
 
@@ -340,22 +340,22 @@ builder.server <- function(input, output, clientData, session) {
 
 
 
-  observeEvent(input$save_add_step,{
-
-    w <- list(type=input$add_type, args=input$add_args)
-    DD$steps <- append(DD$steps, list(w))
-
-    # message("code.x:\n", code.x(),
-    #         "\n\ncode.pretty", code.pretty(),
-    #         "\n\ncode.body", code.body(),
-    #         "\n\n")
-
-    session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
-  })
-
-  observeEvent(input$cancel_add_step, {
-    session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
-  })
+  # observeEvent(input$save_add_step,{
+  #
+  #   w <- list(type=input$add_type, args=input$add_args)
+  #   DD$steps <- append(DD$steps, list(w))
+  #
+  #   # message("code.x:\n", code.x(),
+  #   #         "\n\ncode.pretty", code.pretty(),
+  #   #         "\n\ncode.body", code.body(),
+  #   #         "\n\n")
+  #
+  #   session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
+  # })
+  #
+  # observeEvent(input$cancel_add_step, {
+  #   session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
+  # })
 
   code.x <- reactive({
     f <- sapply(DD$steps, `[[`, 'type')
@@ -429,13 +429,33 @@ builder.server <- function(input, output, clientData, session) {
 
   ################# editer observers
 
+  observeEvent(input$add_step,{
+
+    DD$add <- TRUE
+
+    message("Adding step ", DD$editing, "\n")
+
+    # step <-DD$steps[[DD$editing]]
+    #updateSelectInput(session, "edit_type", selected=steps_funs[1])
+    #updateTextInput(session, "edit_args", value="")
+
+    # ))
+
+    session$sendCustomMessage(type = "openModal", "#editor")
+
+
+  })
+
+
+
   observeEvent(input$edit_open,{
 
     DD$editing <- input$edit_open
+    DD$add <- FALSE
 
     message("Editing ", DD$editing, "\n")
 
-    step <-DD$steps[[DD$editing]]
+    step <- DD$steps[[DD$editing]]
     updateSelectInput(session, "edit_type", selected=step$type)
     updateTextInput(session, "edit_args", value=step$args)
 
@@ -450,10 +470,13 @@ builder.server <- function(input, output, clientData, session) {
   observeEvent(input$edit_cancel,{
     i <- DD$editing
 
+    if(!DD$add) {
+      step <- DD$steps[[DD$editing]]
+      updateSelectInput(session, "edit_type", selected=step$type)
+      updateTextInput(session, "edit_args", value=step$args)
+    }
 
-    step <-DD$steps[[DD$editing]]
-    updateSelectInput(session, "edit_type", selected=step$type)
-    updateTextInput(session, "edit_args", value=step$args)
+    DD$add <- FALSE
 
     session$sendCustomMessage(type = "closeModal", "#editor")
 
@@ -471,36 +494,38 @@ builder.server <- function(input, output, clientData, session) {
   })
 
   observeEvent(input$edit_save, {
-     i <- DD$editing
+     i <- if(DD$add) length(DD$steps) + 1 else DD$editing
      w <- list(type=input[["edit_type"]], args=input[["edit_args"]])
 
      session$sendCustomMessage(type = "closeModal", "#editor")
 
      DD$steps[[i]] <- w
      DD$steps <- DD$steps #forces refresh
-
+     DD$add <- FALSE
   })
 
   observeEvent(input$edit_up, {
     i <- input$edit_up
-    if(i == 1 || length(DD$steps) == 1) return()
-    DD$steps[i - 1:0] <- DD$steps[i - 0:1]
+
+    if(i != 1) DD$steps[i - 1:0] <- DD$steps[i - 0:1]
 
   })
 
   observeEvent(input$edit_down, {
     i <- input$edit_down
-    if(i == length(DD$steps) || length(DD$steps) == 1) return()
-    DD$steps[i + 0:1] <- DD$steps[i + 1:0]
+    if(i != length(DD$steps))  DD$steps[i + 0:1] <- DD$steps[i + 1:0]
 
   })
 
 
   output$step_editor <- renderUI({
-      input$edit_open
+
+    message("step_editor enter\n")
+
     i <- DD$editing
-    step <-DD$steps[[i]]
-    message(i, step, "\n\n\n[", input$edit_type, "]\n")
+    step <- if(!DD$add) DD$steps[[i]] else list(type=steps_funs[1], args="")
+
+    message(i, " ", DD$add, " ", step, "\n\n\n")#[", isolate(input$edit_type), "]\n")
 
     if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output, session, design_instance())
 
@@ -510,7 +535,7 @@ builder.server <- function(input, output, clientData, session) {
       uiOutput("step_detail_tabs"),
       actionButton("edit_save", "Save"),
       actionButton("edit_cancel", "Cancel"),
-      actionButton("edit_delete", "Delete")
+      if(!DD$add)actionButton("edit_delete", "Delete")
     )
   })
 

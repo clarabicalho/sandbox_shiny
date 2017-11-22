@@ -10,7 +10,7 @@ step_help_text[[DECLARE_SAMPLING]] <- shiny::tags$div(
 
 steps_config[[DECLARE_SAMPLING]] <- shiny::tags$div(
 
-  selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (proportion)"="p", "SRS (probability)"="srs")),
+  selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (p)"="p", "SRS (p)"="srs")),
   numericInput("sampling_param", "Param", 0),
 
 

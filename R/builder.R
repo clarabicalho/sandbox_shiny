@@ -120,7 +120,7 @@ builder.server <- function(input, output, clientData, session) {
     f <- sapply(DD$steps, `[[`, 'type')
     a <- sapply(DD$steps, `[[`, 'args')
 
-    code.x <- paste0("declare_design(\n", paste( sprintf("\t%s(%s)", f, a)   , collapse=",\n") ,"\n)")
+    code.x <- sprintf("declare_design(\n%s\n)", paste( sprintf("\t%s(%s)", f, a), collapse=",\n") )
     code.x
   })
 

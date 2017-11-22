@@ -36,7 +36,6 @@ steps_config <- list(
   "declare_population"="Population",
   "declare_potential_outcomes"="",
   "declare_estimand"="",
-  "declare_assignment"="",
   "reveal_outcomes"="",
   "declare_estimator"="")
 
@@ -73,17 +72,6 @@ step_help_text = list(
       shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
     )
 
-  ),
-  "declare_assignment"=shiny::tags$div(
-    shiny::tags$h5("Declare Assignment"),
-    shiny::tags$dl(
-      shiny::tags$dt("m"),
-      shiny::tags$dd(	"Use for a two-arm design in which m units (or clusters) are assigned to treatment and N-m units (or clusters) are assigned to control. In a blocked design, exactly m units in each block will be treated. (optional)"),
-      shiny::tags$dt("m-each"),
-      shiny::tags$dd("Use for a multi-arm design in which the values of m_each determine the number of units (or clusters) assigned to each condition. m_each must be a numeric vector in which each entry is a nonnegative integer that describes how many units (or clusters) should be assigned to the 1st, 2nd, 3rd... treatment condition. m_each must sum to N. (optional)"),
-      shiny::tags$dt("label"),
-      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
-    )
   ),
   "reveal_outcomes"=shiny::tags$div(
 

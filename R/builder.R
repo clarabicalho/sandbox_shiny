@@ -195,8 +195,6 @@ builder.server <- function(input, output, clientData, session) {
 
   })
 
-
-
   observeEvent(input$edit_open,{
 
     DD$editing <- input$edit_open
@@ -262,6 +260,17 @@ builder.server <- function(input, output, clientData, session) {
 
   })
 
+  output$editor_modal <- renderUI({
+    #### Editor dialog
+    editor <- remove_close_button_from_modal(
+      material_modal(modal_id="editor",
+                     button_text="Edit...",
+                     title="Editing",
+                     uiOutput("step_editor")
+      ))
+    editor[[2]][[1]] <- NULL# skip making outer button ...
+    editor
+  })
 
   output$step_editor <- renderUI({
 
@@ -294,17 +303,6 @@ builder.server <- function(input, output, clientData, session) {
     )
   })
 
-  output$editor_modal <- renderUI({
-    #### Editor dialog
-    editor <- remove_close_button_from_modal(
-                material_modal(modal_id="editor",
-                               button_text="Edit...",
-                               title="Editing",
-                               uiOutput("step_editor")
-              ))
-    editor[[2]][[1]] <- NULL# skip making outer button ...
-    editor
-  })
 
 
 

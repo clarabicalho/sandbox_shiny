@@ -63,7 +63,8 @@ builder.ui <- material_page(
 buildStep <- function(step,i){
   js="Shiny.onInputChange('%s', %d)"
 
-  card <- material_card(title=steps_labels[step$type],
+
+  card <- material_card(title=step_obj[[step$type]]$label,
                         shiny::tags$div(step$args),
                         actionButton(sprintf("edit_%i_up", i), "\U25B4", onclick=sprintf(js, "edit_up", i)),
                         actionButton(sprintf("edit_%i_down", i), "\U25BE", onclick=sprintf(js, "edit_down", i)),
@@ -86,7 +87,7 @@ builder.server <- function(input, output, clientData, session) {
 
   tmpfile <- tempfile()
 
-
+  step_obj <- lapply(setNames(nm=steps_order), function(i) step_obj[[i]])
 
   output$cards <- renderUI({
     ret <- list()
@@ -104,12 +105,12 @@ builder.server <- function(input, output, clientData, session) {
   })
 
   output$simulationPanel <-    renderDataTable({
-    sims_tab <- draw_data(design_instance())
+    sims_tab <- draw_data( DD$design_instance() )
     round_df(sims_tab, 4)
   }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
 
   output$diagnosisPanel <-    renderTable({
-    diagnosands <- get_diagnosands(diagnose_design(design_instance(), sims = 5, bootstrap_sims = 5))
+    diagnosands <- get_diagnosands(diagnose_design(DD$design_instance() , sims = 5, bootstrap_sims = 5))
     pretty_diagnoses(diagnosands)
   })
 
@@ -161,18 +162,19 @@ builder.server <- function(input, output, clientData, session) {
 
   ### make template
 
-  template.fun <- reactive({
+  DD$template.fun <- reactive({
     f <- function() 0
     formals(f) <- formals.x()
     body(f) <- parse(text=code.body())
-    print(f)
+    #print(f)
     saveRDS(f, tmpfile)
     f
   })
 
-  ## make design instance
 
-  design_instance <- reactive(template.fun()())
+
+  ## make design instance
+  DD$design_instance <- reactive( DD$template.fun()() )
 
 
   output$download_design <- downloadHandler(
@@ -181,7 +183,7 @@ builder.server <- function(input, output, clientData, session) {
     },
     content = function(file) {
       # browser()
-      saveRDS(template.fun(), file)
+      saveRDS(DD$template.fun(), file)
     })
 
 
@@ -272,6 +274,14 @@ builder.server <- function(input, output, clientData, session) {
     editor
   })
 
+  # Register server logic for each step
+  local(
+    for(step in step_obj){
+      message("Registering server code for ", step$name)
+      step$server(input, output, session)
+    }
+  )
+
   output$step_editor <- renderUI({
 
     message("step_editor enter\n")
@@ -281,10 +291,10 @@ builder.server <- function(input, output, clientData, session) {
 
     message(i, " ", DD$add, " ", step, "\n\n\n")
 
-    if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output, session, design_instance())
+    steps_labeled <- setNames(names(step_obj), vapply(step_obj, `[[`, NA_character_, "label"))
 
     material_card("",
-      selectInput("edit_type", "Type:", steps_funs, step$type),
+      selectInput("edit_type", "Type:", steps_labeled, step$type),
       textInput("edit_args", "Options", step$args),
       uiOutput("step_detail_tabs"),
       actionButton("edit_save", "Save"),
@@ -295,11 +305,12 @@ builder.server <- function(input, output, clientData, session) {
 
 
   output$step_detail_tabs <- renderUI({
-    x <- steps_config[[input$edit_type]]
-    # message(ifelse(steps_config[[input$edit_type]] == "", 'h', 'c'), "\n")
-    tabsetPanel(selected = ifelse(identical(x, ""), 'h', 'c'),
+    session$userData[["DD"]] <- DD
+    selected_step <- step_obj[[input$edit_type]]
+    x <- selected_step$config
+    tabsetPanel(selected = 'c',
                 tabPanel("Configure", value='c', x),
-                tabPanel("Help", value='h', step_help_text[[input$edit_type]])
+                tabPanel("Help", value='h', selected_step$help)
     )
   })
 

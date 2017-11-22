@@ -1,4 +1,8 @@
-step_help_text[[DECLARE_ASSIGNMENT]] <-   shiny::tags$div(
+step_obj[[DECLARE_ASSIGNMENT]] <- local({
+
+
+
+step_help_text <-   shiny::tags$div(
   shiny::tags$h5("Declare Assignment"),
   shiny::tags$dl(
     shiny::tags$dt("m"),
@@ -16,7 +20,7 @@ step_help_text[[DECLARE_ASSIGNMENT]] <-   shiny::tags$div(
   )
 )
 
-steps_config[[DECLARE_ASSIGNMENT]] <- shiny::tags$div(
+steps_config <- shiny::tags$div(
 
   selectInput("assignment_type", "assignment Type:", c("Two Arm (m)"="m",
                                                        "Two Arm (p)"="prob",
@@ -38,25 +42,20 @@ steps_config[[DECLARE_ASSIGNMENT]] <- shiny::tags$div(
 )
 
 
-steps_dynamic[[DECLARE_ASSIGNMENT]] <- function(input, output, session, design_instance){
-
-  if(get0(DECLARE_ASSIGNMENT, session$userData, ifnotfound = FALSE)) return() # already done this
-
-  session$userData[[DECLARE_ASSIGNMENT]] <- TRUE
-
-  message("registering callbacks for ", DECLARE_ASSIGNMENT)
-
+steps_dynamic <- function(input, output, session){
 
   output$assignment_block_chooser <- renderUI({
     message("hiarylah");
-    if(isTRUE(input$assignment_block))
-      make_variable_chooser("assignment_block_variable", design_instance, input$assignment_block_variable)
+    if(isTRUE(input$assignment_block)) {
+      # browser()
+      make_variable_chooser("assignment_block_variable", session$userData$DD$design_instance(), input$assignment_block_variable)
+    }
   })
 
   output$assignment_cluster_chooser <- renderUI({
     message("dfsa[", input$assignment_cluster, "]adfs\n");
     if(isTRUE(input$assignment_cluster))
-      make_variable_chooser("assignment_cluster_variable", design_instance, input$assignment_cluster_variable)
+      make_variable_chooser("assignment_cluster_variable", session$userData$DD$design_instance(), input$assignment_cluster_variable)
   })
 
   update_options <- function(input, session){
@@ -81,8 +80,13 @@ steps_dynamic[[DECLARE_ASSIGNMENT]] <- function(input, output, session, design_i
   observeEvent(input$assignment_block_variable, update_options(input, session))
 }
 
+list(
+  name=DECLARE_ASSIGNMENT,
+  label="Assignment",
+  config=steps_config,
+  help=step_help_text,
+  server=steps_dynamic
+)
 
-step_obj[[DECLARE_ASSIGNMENT]] <- list(config=steps_config[[DECLARE_ASSIGNMENT]],
-                                     help=step_help_text[[DECLARE_ASSIGNMENT]],
-                                     server=steps_dynamic[[DECLARE_ASSIGNMENT]])
+})
 

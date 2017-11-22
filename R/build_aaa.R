@@ -17,59 +17,18 @@ default_builder <- list(mk_step(DECLARE_POPULATION,         '`N=100`,noise=rnorm
                         mk_step(DECLARE_ESTIMATOR,          'Y~Z, estimand="ATE"'))
 
 
-steps_funs <- c(
-  "Population"         = DECLARE_POPULATION,
-  "Potential outcomes" = DECLARE_POTENTIAL_OUTCOMES,
-  "Sampling"           = DECLARE_SAMPLING,
-  "Estimand"           = DECLARE_ESTIMAND,
-  "Assignment"         = DECLARE_ASSIGNMENT,
-  "Reveal outcomes"    = REVEAL_OUTCOMES,
-  "Estimator"          = DECLARE_ESTIMATOR)
+steps_order <- c(
+  DECLARE_POPULATION,
+  DECLARE_POTENTIAL_OUTCOMES,
+  DECLARE_SAMPLING,
+  DECLARE_ESTIMAND,
+  DECLARE_ASSIGNMENT,
+  REVEAL_OUTCOMES,
+  DECLARE_ESTIMATOR
+)
 
-steps_labels <- setNames(names(steps_funs), steps_funs)
-
-steps_dynamic <- list()
 
 step_obj <- list()
 
-steps_config <- list(
-  "declare_population"="Population",
-  "declare_potential_outcomes"="",
-  "declare_estimand"="",
-  "reveal_outcomes"="",
-  "declare_estimator"="")
 
-
-step_help_text = list(
-  "declare_population" = shiny::tags$div(
-    shiny::tags$h5("Declare the Size and Features of the Population"),
-    shiny::tags$dl(
-      shiny::tags$dt("N"),
-      shiny::tags$dd("number of units to draw. If provided as fabricate(N = 5), this determines the number of units in the single-level data. If provided in level, i.e. fabricate(cities = level(N = 5)), N determines the number of units in a specific level of a hierarchical dataset."),
-      shiny::tags$dt("ID_label"),
-      shiny::tags$dd("(optional) variable name for ID variable, i.e. citizen_ID")
-    )
-  ),
-
-  "declare_estimand"=shiny::tags$div(
-    shiny::tags$h5("Declare Estimand"),
-    shiny::tags$dl(
-      shiny::tags$dt("..."),
-      shiny::tags$dd("Named estimands"),
-      shiny::tags$dt("subset"),
-      shiny::tags$dd("(optional) A subset to calculate the estimand on"),
-      shiny::tags$dt("label"),
-      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
-    )
-
-  ),
-  "reveal_outcomes"=shiny::tags$div(
-
-
-  ),
-  "declare_estimator"=shiny::tags$div(
-
-
-  )
-)
 

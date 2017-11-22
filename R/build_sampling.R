@@ -1,4 +1,6 @@
-step_help_text[[DECLARE_SAMPLING]] <- shiny::tags$div(
+step_obj[[DECLARE_SAMPLING]] <- local({
+
+step_help_text <- shiny::tags$div(
   shiny::tags$h5("Declare Sampling Procedure"),
   shiny::tags$dl(
     shiny::tags$dt("n"),
@@ -8,7 +10,7 @@ step_help_text[[DECLARE_SAMPLING]] <- shiny::tags$div(
   )
 )
 
-steps_config[[DECLARE_SAMPLING]] <- shiny::tags$div(
+steps_config <- shiny::tags$div(
 
   selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (p)"="p", "SRS (p)"="srs")),
   numericInput("sampling_param", "Param", 0),
@@ -26,25 +28,19 @@ steps_config[[DECLARE_SAMPLING]] <- shiny::tags$div(
 )
 
 
-steps_dynamic[[DECLARE_SAMPLING]] <- function(input, output, session, design_instance){
-
-  if(exists("declare_sampling", session$userData)) return() # already done this
-
-  session$userData[["declare_sampling"]] <- TRUE
-
-  message("registering callbacks")
+steps_dynamic <- function(input, output, session){
 
 
   output$sampling_strata_chooser <- renderUI({
-    message("hiarylah");
+    # message("hiarylah");
     if(isTRUE(input$sampling_strata))
-      make_variable_chooser("sampling_strata_variable", design_instance, input$sampling_strata_variable)
+      make_variable_chooser("sampling_strata_variable", session$userData$DD$design_instance(), input$sampling_strata_variable)
   })
 
   output$sampling_cluster_chooser <- renderUI({
-    message("dfsa[", input$sampling_cluster, "]adfs\n");
+    # message("dfsa[", input$sampling_cluster, "]adfs\n");
     if(isTRUE(input$sampling_cluster))
-      make_variable_chooser("sampling_cluster_variable", design_instance, input$sampling_cluster_variable)
+      make_variable_chooser("sampling_cluster_variable", session$userData$DD$design_instance(), input$sampling_cluster_variable)
   })
 
   update_options <- function(input, session){
@@ -52,7 +48,7 @@ steps_dynamic[[DECLARE_SAMPLING]] <- function(input, output, session, design_ins
                        switch(input$sampling_type, srs="p", input$sampling_type),
                        input$sampling_param)
 
-    if(isTRUE(input$sampling_type == "sts")) options <- paste0(options, ", simple = TRUE")
+    if(isTRUE(input$sampling_type == "srs")) options <- paste0(options, ", simple = TRUE")
     if(isTRUE(input$sampling_cluster))       options <- paste0(options, ", clust_var =", input$sampling_cluster_variable)
     if(isTRUE(input$sampling_strata))        options <- paste0(options, ", strata_var =", input$sampling_strata_variable)
 
@@ -68,8 +64,13 @@ steps_dynamic[[DECLARE_SAMPLING]] <- function(input, output, session, design_ins
   observeEvent(input$sampling_strata_variable, update_options(input, session))
 }
 
+list(
+  name = DECLARE_SAMPLING,
+  label = "Sampling",
+  config=steps_config,
+  help=step_help_text,
+  server=steps_dynamic
+)
 
-step_obj[[DECLARE_SAMPLING]] <- list(config=steps_config[[DECLARE_SAMPLING]],
-                                       help=step_help_text[[DECLARE_SAMPLING]],
-                                       server=steps_dynamic[[DECLARE_SAMPLING]])
+})
 

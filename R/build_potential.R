@@ -1,4 +1,6 @@
-step_help_text[[DECLARE_POTENTIAL_OUTCOMES]] <- shiny::tags$div(
+step_obj[[DECLARE_POTENTIAL_OUTCOMES]] <- local({
+
+step_help_text <- shiny::tags$div(
   shiny::tags$h5("Declare Potential Outcomes"),
   shiny::tags$dl(
     shiny::tags$dt("formula"),
@@ -11,7 +13,7 @@ step_help_text[[DECLARE_POTENTIAL_OUTCOMES]] <- shiny::tags$div(
 )
 
 
-steps_config[[DECLARE_POTENTIAL_OUTCOMES]] <- shiny::tags$div(
+steps_config <- shiny::tags$div(
 
   selectInput("potential_type", "Outcome Type:", c("Binary", "Likert", "Normal")),
 
@@ -25,16 +27,11 @@ steps_config[[DECLARE_POTENTIAL_OUTCOMES]] <- shiny::tags$div(
 )
 
 
-steps_dynamic[[DECLARE_POTENTIAL_OUTCOMES]] <- function(input, output, session, design_instance){
-
-  if(get0(DECLARE_POTENTIAL_OUTCOMES, session$userData, ifnotfound = FALSE)) return() # already done this
-  session$userData[[DECLARE_POTENTIAL_OUTCOMES]] <- TRUE
-  message("registering callbacks for ", DECLARE_POTENTIAL_OUTCOMES)
-
+steps_dynamic <- function(input, output, session){
 
 
   output$potential_condition_chooser <- renderUI({
-      make_variable_chooser("potential_condition_variable", design_instance, input$potential_condition_variable)
+      make_variable_chooser("potential_condition_variable", session$userData$DD$design_instance(), input$potential_condition_variable)
   })
 
 
@@ -60,7 +57,13 @@ steps_dynamic[[DECLARE_POTENTIAL_OUTCOMES]] <- function(input, output, session, 
 }
 
 
-step_obj[[DECLARE_POTENTIAL_OUTCOMES]] <- list(config=steps_config[[DECLARE_POTENTIAL_OUTCOMES]],
-                                     help=step_help_text[[DECLARE_POTENTIAL_OUTCOMES]],
-                                     server=steps_dynamic[[DECLARE_POTENTIAL_OUTCOMES]])
+list(
+  name = DECLARE_POTENTIAL_OUTCOMES,
+  label = "Potential Outcomes",
+  config=steps_config,
+  help=step_help_text,
+  server=steps_dynamic
+)
+
+})
 

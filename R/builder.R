@@ -1,5 +1,12 @@
 
-js="Shiny.onInputChange('%s', %d)"
+
+default_builder <- list(list(type='declare_population', args='`N=100`,noise=rnorm(N)'),
+                        list(type='declare_potential_outcomes', args='Y_Z_0=noise, Y_Z_1=noise+1'),
+                        list(type='declare_estimand', args='ATE=mean(Y_Z_1 - Y_Z_0), label="ATE"'),
+                        list(type='declare_sampling', args='`n=20`'),
+                        list(type='declare_assignment', args='`m=10`'),
+                        list(type='reveal_outcomes', args=""),
+                        list(type='declare_estimator',  args='Y~Z, estimand="ATE"'))
 
 
 steps_funs <- setNames(c(
@@ -42,15 +49,7 @@ step_help_text = list(
       shiny::tags$dd("(optional) conditions the assignment may take")
     )
   ),
-  "declare_sampling"=shiny::tags$div(
-    shiny::tags$h5("Declare Sampling Procedure"),
-    shiny::tags$dl(
-      shiny::tags$dt("n"),
-      shiny::tags$dd("Use for a design in which n units (or clusters) are sampled. In a stratified design, exactly n units in each stratum will be sampled. (optional)"),
-      shiny::tags$dt("prob / simple"),
-      shiny::tags$dd("(optional) Take a prob-% fixed-size sample or, if simple is TRUE, a SRS with prob")
-    )
-  ),
+  "declare_sampling"=declare_sampling_help,
   "declare_estimand"=shiny::tags$div(
     shiny::tags$h5("Declare Estimand"),
     shiny::tags$dl(
@@ -88,22 +87,7 @@ step_help_text = list(
 steps_config <- list(
   "declare_population"="Population",
   "declare_potential_outcomes"="",
-  "declare_sampling"= shiny::tags$div(
-
-    selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (proportion)"="p", "SRS (probability)"="srs")),
-    numericInput("sampling_param", "Param", 0),
-
-
-    material_checkbox("sampling_strata", "Strata:", FALSE),
-
-    uiOutput("sampling_strata_chooser"),
-
-    material_checkbox("sampling_cluster", "Cluster:", FALSE),
-
-    uiOutput("sampling_cluster_chooser")
-
-
-  ),
+  "declare_sampling"= declare_sampling_config,
   "declare_estimand"="",
   "declare_assignment"="",
   "reveal_outcomes"="",
@@ -117,57 +101,13 @@ editor <- remove_close_button_from_modal(material_modal(modal_id="editor", butto
 
 editor[[2]][[1]] <- NULL# skip making outer button ...
 
-steps_dynamic <- list("declare_sampling"=function(input, output, session, design_instance){
-
-  if(exists("declare_sampling", session$userData)) return() # already done this
-
-  session$userData[["declare_sampling"]] <- TRUE
-
-  message("registering callbacks")
-
-
-  output$sampling_strata_chooser <- renderUI({
-    message("hiarylah");
-    if(isTRUE(input$sampling_strata))
-      make_variable_chooser("sampling_strata_variable", design_instance, input$sampling_strata_variable)
-  })
-
-  output$sampling_cluster_chooser <- renderUI({
-    message("dfsa[", input$sampling_cluster, "]adfs\n");
-    if(isTRUE(input$sampling_cluster))
-      make_variable_chooser("sampling_cluster_variable", design_instance, input$sampling_cluster_variable)
-  })
-
-  update_options <- function(input, session){
-    options <-
-      sprintf("`%s=%s`", switch(input$sampling_type, srs="p", input$sampling_type), input$sampling_param)
-    if(isTRUE(input$sampling_type == "sts")) options <- paste(options, ", simple = TRUE")
-    if(isTRUE(input$sampling_cluster)) options <- paste(options, ", clust_var =", input$sampling_cluster_variable)
-    if(isTRUE(input$sampling_strata)) options <- paste(options, ", strata_var =", input$sampling_strata_variable)
-
-    updateTextInput(session, "edit_args", value=options)
-  }
-
-  # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$sampling_type, update_options(input, session))
-  observeEvent(input$sampling_param, update_options(input, session))
-  observeEvent(input$sampling_cluster, update_options(input, session))
-  observeEvent(input$sampling_strata, update_options(input, session))
-  observeEvent(input$sampling_cluster_variable, update_options(input, session))
-  observeEvent(input$sampling_strata_variable, update_options(input, session))
-
-
-
-})
+steps_dynamic <- list("declare_sampling"=declare_sampling_server)
 
 builder.ui <- material_page(
   title = "Design Builder",
   nav_bar_color = nav_bar_color,
-  # background_color = "blue lighten-4",
-  # shiny::tags$h1("Page Content"),
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
   includeCSS(system.file("css/materialize.css", package="DDshiny")),
-#  shiny::includeScript(system.file(file.path("js", "shiny-material-checkbox.js"), package = "shinymaterial")),
 
   bootstrapLib(),
   # handler to receive data from server
@@ -188,31 +128,18 @@ builder.ui <- material_page(
       width=4,
 
       material_card("Design Steps",
-      # shiny::tags$h1("Input2"),
       shiny::tags$div(style="overflow-y: scroll; height: 500px",
         uiOutput("cards")
       ),
-      # material_button("add_step", "Add Step"),#, icon="add_box"),
       actionButton("add_step", "[+] Add Step", `data-target`="editor", class="waves-effect waves-light shiny-material-modal-trigger btn"),
-      # remove_close_button_from_modal(
-      # material_modal(modal_id="add_step", button_text="Add Step", title="New Step",
-      #                selectInput("add_type", "Type:", steps_funs),
-      #                textInput("add_args", "Options"),
-      #                step_help_panels("add_type"),
-      #                actionButton("save_add_step", "Save"),
-      #                actionButton("cancel_add_step", "Cancel")
-      #  )),
-      #tags$br(),
       downloadButton("download_design", "Export Design"),
       uiOutput("inspectLink")
       )
     ),
     material_column(
       width = 8,
-      # offset=6,
       material_card("Design Output",
-      bsCollapse(id="outputCollapse", open="About",
-                 #bsCollapsePanel("Summary", "The summary"),
+        bsCollapse(id="outputCollapse", open="About",
                  bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                                  downloadButton("download_code", "Export Code...")),
                  bsCollapsePanel("Simulate Data", dataTableOutput("simulationPanel")),
@@ -223,12 +150,10 @@ builder.ui <- material_page(
                  bsCollapsePanel("About DeclareDesign Builder", value="About",
                                  p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
                                  p("This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
-                 )
-                 # bsCollapsePanel("Export", "export here")
-      )
+                   )
+        )
       )
 
-      # shiny::tags$h1("Output2")
     )
   )
 )
@@ -249,13 +174,6 @@ buildStep <- function(step,i){
   card
 }
 
-default_builder <- list(list(type='declare_population', args='`N=100`,noise=rnorm(N)'),
-                        list(type='declare_potential_outcomes', args='Y_Z_0=noise, Y_Z_1=noise+1'),
-                        list(type='declare_estimand', args='ATE=mean(Y_Z_1 - Y_Z_0), label="ATE"'),
-                        list(type='declare_sampling', args='`n=20`'),
-                        list(type='declare_assignment', args='`m=10`'),
-                        list(type='reveal_outcomes', args=""),
-                        list(type='declare_estimator',  args='Y~Z, estimand="ATE"'))
 
 builder.server <- function(input, output, clientData, session) {
 
@@ -270,12 +188,6 @@ builder.server <- function(input, output, clientData, session) {
 
 
   output$cards <- renderUI({
-    # a <- replicate(10, material_card(
-    #   title = "Example Card",
-    #   # depth = 5,
-    #   shiny::tags$h5("Card Content")
-    # ), simplify = FALSE)
-    # a
     ret <- list()
     for(i in seq_along(DD$steps)){
       ret[[i]] <- buildStep(DD$steps[[i]], i)
@@ -291,45 +203,23 @@ builder.server <- function(input, output, clientData, session) {
   })
 
   output$simulationPanel <-    renderDataTable({
-    # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
     sims_tab <- draw_data(design_instance())
-    # rownames(diag_tab) <- diag_tab$estimand_label
-    sims_tab <- round_df(sims_tab, 4)
-    sims_tab
+    round_df(sims_tab, 4)
   }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
 
   output$diagnosisPanel <-    renderTable({
-    # sims_tab <- get_simulations(diagnosis = DD$diagnosis)
     diagnosands <- get_diagnosands(diagnose_design(design_instance(), sims = 5, bootstrap_sims = 5))
-    # rownames(diag_tab) <- diag_tab$estimand_label
     pretty_diagnoses(diagnosands)
   })
 
 
 
-  # observeEvent(input$save_add_step,{
-  #
-  #   w <- list(type=input$add_type, args=input$add_args)
-  #   DD$steps <- append(DD$steps, list(w))
-  #
-  #   # message("code.x:\n", code.x(),
-  #   #         "\n\ncode.pretty", code.pretty(),
-  #   #         "\n\ncode.body", code.body(),
-  #   #         "\n\n")
-  #
-  #   session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
-  # })
-  #
-  # observeEvent(input$cancel_add_step, {
-  #   session$sendCustomMessage(type = "closeModal", paste0("#", "add_step"))
-  # })
 
   code.x <- reactive({
     f <- sapply(DD$steps, `[[`, 'type')
     a <- sapply(DD$steps, `[[`, 'args')
 
     code.x <- paste0("declare_design(\n", paste( sprintf("\t%s(%s)", f, a)   , collapse=",\n") ,"\n)")
-    # message("\ncode.x:\n", code.x, '\n\n\n')
     code.x
   })
 
@@ -399,17 +289,8 @@ builder.server <- function(input, output, clientData, session) {
   observeEvent(input$add_step,{
 
     DD$add <- TRUE
-
-    message("Adding step ", DD$editing, "\n")
-
-    # step <-DD$steps[[DD$editing]]
-    #updateSelectInput(session, "edit_type", selected=steps_funs[1])
-    #updateTextInput(session, "edit_args", value="")
-
-    # ))
-
+    message("Adding step\n")
     session$sendCustomMessage(type = "openModal", "#editor")
-
 
   })
 
@@ -443,11 +324,9 @@ builder.server <- function(input, output, clientData, session) {
       updateTextInput(session, "edit_args", value=step$args)
     }
 
-    DD$add <- FALSE
 
     session$sendCustomMessage(type = "closeModal", "#editor")
 
-    #message("Strata:[", input$sampling_strata, "] T:[", input$sampling_strata_chooser, "]\n")
 
   })
 
@@ -456,6 +335,7 @@ builder.server <- function(input, output, clientData, session) {
      session$sendCustomMessage(type = "closeModal", "#editor")
 
      message("deleting... ", i, "\n")
+     DD$editing <- 1 # reset this here to make sure no `Warning: Error in [[: subscript out of bounds` as editor rerenders in bg
      DD$steps[[i]] <- NULL
 
   })
@@ -465,10 +345,7 @@ builder.server <- function(input, output, clientData, session) {
      w <- list(type=input[["edit_type"]], args=input[["edit_args"]])
 
      session$sendCustomMessage(type = "closeModal", "#editor")
-
      DD$steps[[i]] <- w
-     DD$steps <- DD$steps #forces refresh
-     DD$add <- FALSE
   })
 
   observeEvent(input$edit_up, {
@@ -492,7 +369,7 @@ builder.server <- function(input, output, clientData, session) {
     i <- DD$editing
     step <- if(!DD$add) DD$steps[[i]] else list(type=steps_funs[1], args="")
 
-    message(i, " ", DD$add, " ", step, "\n\n\n")#[", isolate(input$edit_type), "]\n")
+    message(i, " ", DD$add, " ", step, "\n\n\n")
 
     if(step$type %in% names(steps_dynamic)) steps_dynamic[[step$type]](input, output, session, design_instance())
 
@@ -520,11 +397,6 @@ builder.server <- function(input, output, clientData, session) {
 
 
 
-  # output$test_test <- renderUI("test test test")
-
-
-
-
   ### For clicking in to inspector
 
   output$inspectLink <- renderUI({
@@ -532,11 +404,6 @@ builder.server <- function(input, output, clientData, session) {
     tags$a(href=paste0("/?file=", tmpfile), "Inspector", onclick="javascript:event.target.port=8000")
 
   })
-
-
-
-  #### step options
-
 
 
 
@@ -551,4 +418,3 @@ make_variable_chooser <- function(id, design_instance, selected) {
 
 #' @export
 DDbuilder <- shinyApp(builder.ui, builder.server)
-# DDbuilder

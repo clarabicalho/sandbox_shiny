@@ -1,6 +1,6 @@
 step_obj[[DECLARE_SAMPLING]] <- local({
 
-step_help_text <- shiny::tags$div(
+help_panel <- shiny::tags$div(
   shiny::tags$h5("Declare Sampling Procedure"),
   shiny::tags$dl(
     shiny::tags$dt("n"),
@@ -10,7 +10,7 @@ step_help_text <- shiny::tags$div(
   )
 )
 
-steps_config <- shiny::tags$div(
+config_panel <- shiny::tags$div(
 
   selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (p)"="p", "SRS (p)"="srs")),
   numericInput("sampling_param", "Param", 0),
@@ -28,7 +28,13 @@ steps_config <- shiny::tags$div(
 )
 
 
-steps_dynamic <- function(input, output, session){
+server <- function(input, output, session){
+
+  observeEvent(input$sampling_type, updateNumericInput(session, "sampling_param",
+                                                    label=paste0("Choose ",
+                                                                 switch(input$sampling_type, srs="p", input$sampling_type),
+                                                                 ":")
+                                                    ))
 
 
   output$sampling_strata_chooser <- renderUI({
@@ -56,20 +62,25 @@ steps_dynamic <- function(input, output, session){
   }
 
   # NJF 9/21 Above seems to not work although below does :(
-  observeEvent(input$sampling_type, update_options(input, session))
-  observeEvent(input$sampling_param, update_options(input, session))
-  observeEvent(input$sampling_cluster, update_options(input, session))
-  observeEvent(input$sampling_strata, update_options(input, session))
-  observeEvent(input$sampling_cluster_variable, update_options(input, session))
-  observeEvent(input$sampling_strata_variable, update_options(input, session))
+  for(i in paste0("sampling_", c("type", "param", "cluster", "strata", "cluster_variable", "strata_variable")))
+    local({
+      i <- i
+      observeEvent(input[[i]], update_options(input, session))
+    })
+  # observeEvent(input$sampling_type, update_options(input, session))
+  # observeEvent(input$sampling_param, update_options(input, session))
+  # observeEvent(input$sampling_cluster, update_options(input, session))
+  # observeEvent(input$sampling_strata, update_options(input, session))
+  # observeEvent(input$sampling_cluster_variable, update_options(input, session))
+  # observeEvent(input$sampling_strata_variable, update_options(input, session))
 }
 
 list(
   name = DECLARE_SAMPLING,
   label = "Sampling",
-  config=steps_config,
-  help=step_help_text,
-  server=steps_dynamic
+  config=config_panel,
+  help=help_panel ,
+  server=server
 )
 
 })

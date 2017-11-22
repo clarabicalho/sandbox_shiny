@@ -1,107 +1,8 @@
 
 
-default_builder <- list(list(type='declare_population', args='`N=100`,noise=rnorm(N)'),
-                        list(type='declare_potential_outcomes', args='Y_Z_0=noise, Y_Z_1=noise+1'),
-                        list(type='declare_estimand', args='ATE=mean(Y_Z_1 - Y_Z_0), label="ATE"'),
-                        list(type='declare_sampling', args='`n=20`'),
-                        list(type='declare_assignment', args='`m=10`'),
-                        list(type='reveal_outcomes', args=""),
-                        list(type='declare_estimator',  args='Y~Z, estimand="ATE"'))
 
 
-steps_funs <- setNames(c(
-    "declare_population",
-    "declare_potential_outcomes",
-    "declare_sampling",
-    "declare_estimand",
-    "declare_assignment",
-    "reveal_outcomes",
-    "declare_estimator"),
-    c(
-      "Population",
-      "Potential outcomes",
-      "Sampling",
-      "Estimand",
-      "Assignment",
-      "Reveal outcomes",
-      "Estimator"))
 
-steps_labels <- setNames(names(steps_funs), steps_funs)
-
-step_help_text = list(
-  "declare_population" = shiny::tags$div(
-    shiny::tags$h5("Declare the Size and Features of the Population"),
-    shiny::tags$dl(
-      shiny::tags$dt("N"),
-      shiny::tags$dd("number of units to draw. If provided as fabricate(N = 5), this determines the number of units in the single-level data. If provided in level, i.e. fabricate(cities = level(N = 5)), N determines the number of units in a specific level of a hierarchical dataset."),
-      shiny::tags$dt("ID_label"),
-      shiny::tags$dd("(optional) variable name for ID variable, i.e. citizen_ID")
-    )
-  ),
-  "declare_potential_outcomes"=shiny::tags$div(
-    shiny::tags$h5("Declare Potential Outcomes"),
-    shiny::tags$dl(
-      shiny::tags$dt("formula"),
-      shiny::tags$dd("eg formula = Y ~ .25 * Z + .01 * age * Z"),
-      shiny::tags$dt("assignment_variable_name"),
-      shiny::tags$dd("(optional) variable name for Outcomes (Z)"),
-      shiny::tags$dt("condition_names"),
-      shiny::tags$dd("(optional) conditions the assignment may take")
-    )
-  ),
-  "declare_sampling"=declare_sampling_help,
-  "declare_estimand"=shiny::tags$div(
-    shiny::tags$h5("Declare Estimand"),
-    shiny::tags$dl(
-      shiny::tags$dt("..."),
-      shiny::tags$dd("Named estimands"),
-      shiny::tags$dt("subset"),
-      shiny::tags$dd("(optional) A subset to calculate the estimand on"),
-      shiny::tags$dt("label"),
-      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
-    )
-
-  ),
-  "declare_assignment"=shiny::tags$div(
-    shiny::tags$h5("Declare Assignment"),
-    shiny::tags$dl(
-      shiny::tags$dt("m"),
-      shiny::tags$dd(	"Use for a two-arm design in which m units (or clusters) are assigned to treatment and N-m units (or clusters) are assigned to control. In a blocked design, exactly m units in each block will be treated. (optional)"),
-      shiny::tags$dt("m-each"),
-      shiny::tags$dd("Use for a multi-arm design in which the values of m_each determine the number of units (or clusters) assigned to each condition. m_each must be a numeric vector in which each entry is a nonnegative integer that describes how many units (or clusters) should be assigned to the 1st, 2nd, 3rd... treatment condition. m_each must sum to N. (optional)"),
-      shiny::tags$dt("label"),
-      shiny::tags$dd("(optional) A label for the estimand if not specified in ...")
-    )
-  ),
-  "reveal_outcomes"=shiny::tags$div(
-
-
-  ),
-  "declare_estimator"=shiny::tags$div(
-
-
-  )
-  )
-
-
-steps_config <- list(
-  "declare_population"="Population",
-  "declare_potential_outcomes"="",
-  "declare_sampling"= declare_sampling_config,
-  "declare_estimand"="",
-  "declare_assignment"="",
-  "reveal_outcomes"="",
-  "declare_estimator"="")
-
-#### Editor dialog
-editor <- remove_close_button_from_modal(material_modal(modal_id="editor", button_text="Edit...", title="Editing",
-                                                        uiOutput("step_editor")
-))
-
-
-editor[[2]][[1]] <- NULL# skip making outer button ...
-
-steps_dynamic <- list("declare_sampling"=declare_sampling_server)
 
 builder.ui <- material_page(
   title = "Design Builder",
@@ -342,7 +243,7 @@ builder.server <- function(input, output, clientData, session) {
 
   observeEvent(input$edit_save, {
      i <- if(DD$add) length(DD$steps) + 1 else DD$editing
-     w <- list(type=input[["edit_type"]], args=input[["edit_args"]])
+     w <- mk_step(input[["edit_type"]], input[["edit_args"]])
 
      session$sendCustomMessage(type = "closeModal", "#editor")
      DD$steps[[i]] <- w
@@ -367,7 +268,7 @@ builder.server <- function(input, output, clientData, session) {
     message("step_editor enter\n")
 
     i <- DD$editing
-    step <- if(!DD$add) DD$steps[[i]] else list(type=steps_funs[1], args="")
+    step <- if(!DD$add) DD$steps[[i]] else mk_step(DECLARE_POPULATION, "")
 
     message(i, " ", DD$add, " ", step, "\n\n\n")
 
@@ -393,7 +294,17 @@ builder.server <- function(input, output, clientData, session) {
     )
   })
 
-  output$editor_modal <- renderUI(editor)
+  output$editor_modal <- renderUI({
+    #### Editor dialog
+    editor <- remove_close_button_from_modal(
+                material_modal(modal_id="editor",
+                               button_text="Edit...",
+                               title="Editing",
+                               uiOutput("step_editor")
+              ))
+    editor[[2]][[1]] <- NULL# skip making outer button ...
+    editor
+  })
 
 
 

@@ -1,4 +1,4 @@
-declare_sampling_help <- shiny::tags$div(
+step_help_text[[DECLARE_SAMPLING]] <- shiny::tags$div(
   shiny::tags$h5("Declare Sampling Procedure"),
   shiny::tags$dl(
     shiny::tags$dt("n"),
@@ -8,7 +8,7 @@ declare_sampling_help <- shiny::tags$div(
   )
 )
 
-declare_sampling_config <- shiny::tags$div(
+steps_config[[DECLARE_SAMPLING]] <- shiny::tags$div(
 
   selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (proportion)"="p", "SRS (probability)"="srs")),
   numericInput("sampling_param", "Param", 0),
@@ -26,7 +26,7 @@ declare_sampling_config <- shiny::tags$div(
 )
 
 
-declare_sampling_server <- function(input, output, session, design_instance){
+steps_dynamic[[DECLARE_SAMPLING]] <- function(input, output, session, design_instance){
 
   if(exists("declare_sampling", session$userData)) return() # already done this
 
@@ -48,11 +48,13 @@ declare_sampling_server <- function(input, output, session, design_instance){
   })
 
   update_options <- function(input, session){
-    options <-
-      sprintf("`%s=%s`", switch(input$sampling_type, srs="p", input$sampling_type), input$sampling_param)
-    if(isTRUE(input$sampling_type == "sts")) options <- paste(options, ", simple = TRUE")
-    if(isTRUE(input$sampling_cluster)) options <- paste(options, ", clust_var =", input$sampling_cluster_variable)
-    if(isTRUE(input$sampling_strata)) options <- paste(options, ", strata_var =", input$sampling_strata_variable)
+    options <- sprintf("`%s=%s`",
+                       switch(input$sampling_type, srs="p", input$sampling_type),
+                       input$sampling_param)
+
+    if(isTRUE(input$sampling_type == "sts")) options <- paste0(options, ", simple = TRUE")
+    if(isTRUE(input$sampling_cluster))       options <- paste0(options, ", clust_var =", input$sampling_cluster_variable)
+    if(isTRUE(input$sampling_strata))        options <- paste0(options, ", strata_var =", input$sampling_strata_variable)
 
     updateTextInput(session, "edit_args", value=options)
   }
@@ -65,3 +67,9 @@ declare_sampling_server <- function(input, output, session, design_instance){
   observeEvent(input$sampling_cluster_variable, update_options(input, session))
   observeEvent(input$sampling_strata_variable, update_options(input, session))
 }
+
+
+step_obj[[DECLARE_SAMPLING]] <- list(config=steps_config[[DECLARE_SAMPLING]],
+                                       help=step_help_text[[DECLARE_SAMPLING]],
+                                       server=steps_dynamic[[DECLARE_SAMPLING]])
+

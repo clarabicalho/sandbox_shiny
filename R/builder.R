@@ -84,30 +84,11 @@ step_help_text = list(
   )
   )
 
-#
-# step_help_panels <- function(input){
-#   out <- shiny::tags$div()
-# #  browser()
-#
-#   for(sf in steps_funs) {
-#     condition <- sprintf("input.%s == '%s'", input, sf)
-#     # message(condition)
-#     cp <- conditionalPanel(
-#       condition = condition,
-#     )
-#     out$children <- append(out$children, list(cp))
-#   }
-#
-#   out
-# }
 
 steps_config <- list(
   "declare_population"="Population",
   "declare_potential_outcomes"="",
   "declare_sampling"= shiny::tags$div(
-
-    # material_radio_button("sampling_type", "Sampling Strategy:",
-    #              c("Fixed n", "Simple Random Sample")),
 
     selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (proportion)"="p", "SRS (probability)"="srs")),
     numericInput("sampling_param", "Param", 0),
@@ -118,7 +99,6 @@ steps_config <- list(
     uiOutput("sampling_strata_chooser"),
 
     material_checkbox("sampling_cluster", "Cluster:", FALSE),
-    # verbatimTextOutput("sampling_cluster_text"),
 
     uiOutput("sampling_cluster_chooser")
 
@@ -134,16 +114,17 @@ editor <- remove_close_button_from_modal(material_modal(modal_id="editor", butto
                                                         uiOutput("step_editor")
 ))
 
-# editor[[2]][[1]]$attribs[["style"]] <- "display:inline;" # Yuck #TODO add class, write CSS rule
 
 editor[[2]][[1]] <- NULL# skip making outer button ...
 
 steps_dynamic <- list("declare_sampling"=function(input, output, session, design_instance){
-  # browser()
+
+  if(exists("declare_sampling", session$userData)) return() # already done this
+
+  session$userData[["declare_sampling"]] <- TRUE
 
   message("registering callbacks")
 
-  rvs <- reactiveValues(observers=list())
 
   output$sampling_strata_chooser <- renderUI({
     message("hiarylah");
@@ -151,7 +132,6 @@ steps_dynamic <- list("declare_sampling"=function(input, output, session, design
       make_variable_chooser("sampling_strata_variable", design_instance, input$sampling_strata_variable)
   })
 
-  # output$sampling_cluster_chooser <- renderUI({message("dfsa[", input$sampling_cluster, "]adfs\n");if(isTRUE(input$sampling_cluster))"foo"})
   output$sampling_cluster_chooser <- renderUI({
     message("dfsa[", input$sampling_cluster, "]adfs\n");
     if(isTRUE(input$sampling_cluster))
@@ -167,18 +147,6 @@ steps_dynamic <- list("declare_sampling"=function(input, output, session, design
 
     updateTextInput(session, "edit_args", value=options)
   }
-
-
-  # observeEvent({
-  #   input$sampling_type
-  #   input$sampling_param
-  #   input$sampling_cluster
-  #   input$sampling_block
-  #   input$sampling_cluster_variable
-  #   input$sampling_block_variable
-  # },{
-  #  update_options(input, session)
-  # })
 
   # NJF 9/21 Above seems to not work although below does :(
   observeEvent(input$sampling_type, update_options(input, session))
@@ -252,8 +220,7 @@ builder.ui <- material_page(
                                  shiny::tags$p("Number of simulations: 5"),
                                  shiny::tags$p("Number of bootstrap draws: 10"),
                                  tableOutput("diagnosisPanel")),
-                 bsCollapsePanel("About",
-                                 h5("About the DeclareDesign Inspector"),
+                 bsCollapsePanel("About DeclareDesign Builder", value="About",
                                  p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
                                  p("This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
                  )

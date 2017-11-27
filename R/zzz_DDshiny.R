@@ -1,5 +1,3 @@
-#' DDshiny wizard
-# DDshiny_legacy <- shinyApp(ui, server)
 
 #' DDwizard for simple designs
 #'

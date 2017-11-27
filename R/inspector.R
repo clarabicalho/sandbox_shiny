@@ -62,7 +62,7 @@ diagnostic_params <-       material_card(
 #'
 #'
 inspector.ui <- material_page(
-  title = "Design Inspector",
+  title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('
   Shiny.addCustomMessageHandler("closeModal",
@@ -75,6 +75,8 @@ inspector.ui <- material_page(
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
   withMathJax(),
+  includeCSS(system.file("css/materialize.css", package="DDshiny")),
+
   #TODO This is a super gross way of getting the tooltips to update correctly.
   refresh_tips <- shiny::tags$script("
         setInterval(function(){
@@ -387,6 +389,7 @@ inspector.server <- function(input, output, clientData, session) {
         geom_line() +
         geom_point() +
         geom_ribbon(alpha=.3) +
+        scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
         dd_theme() + facet_grid(~estimand_label) #+ scale_fill_discrete(guide=FALSE)
 
 

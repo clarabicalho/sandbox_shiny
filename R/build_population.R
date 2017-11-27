@@ -1,3 +1,12 @@
+type_to_variable_declaration <- function(fmt="%s~%s(%s%s)", name, type, arg) {
+  sprintf (fmt,  name,
+                    switch(type, Binary="draw_binary", Likert="draw_discrete", "Normal"="rnorm"),
+                    arg,
+                    switch(type, Likert=", breaks=1:7", "")
+  )
+}
+
+
 step_obj[[DECLARE_POPULATION]] <- local({
 
 step_help_text <-   shiny::tags$div(
@@ -18,11 +27,6 @@ steps_config <- shiny::tags$div(
 
   uiOutput("population_builder")
 
-  # numericInput("population_N", "N", 100, min = 0),
-  # textInput("reveal_assignment_variable_names", "Assignment Variable Names", ""),
-  # textInput("reveal_attrition_variable_name", "Attrition Variable Name", ""),
-  # textInput("reveal_outcome_function", "Outcome Function", "")
-
 )
 
 
@@ -33,24 +37,79 @@ steps_dynamic <- function(input, output, session){
                                   Hierarchical=uiOutput("population_builder_hierarchical"))
   )
 
-  output$population_builder_simple <- renderUI("TBD")
+  population_builder_simple_state <- reactiveValues(variables=c(noise="Normal"), registered=c())
+
+  output$population_builder_simple <- renderUI({
+
+
+    shiny::div(
+      numericInput("population_simple_N", "N:", 100, 1, Inf),
+      uiOutput("population_simple_variables"),
+      actionButton("population_simple_add", "Add Variable")
+    )
+
+  })
+
+  output$population_simple_variables <- renderUI({
+
+    out <- list()
+
+    for(i in seq_along(population_builder_simple_state$variables)){
+      name_name <- sprintf("population_simple_name_%i", i)
+      type_name <- sprintf("population_simple_type_%i", i)
+
+      out[[i]] <- shiny::tags$div(
+        textInput(name_name, "Variable Name", names(population_builder_simple_state$variables)[i]),
+        selectInput(type_name, "Variable Type:", c("Binary", "Likert", "Normal"), population_builder_simple_state$variables[i])
+      )
+
+      if(! name_name %in% population_builder_simple_state$registered){
+        observe_i_and_update(local({
+          i <- i
+          name_name <- name_name
+          type_name <- type_name
+          function(){
+            names(population_builder_simple_state$variables)[i] <- input[[name_name]]
+            population_builder_simple_state$variables[i] <- input[[type_name]]
+            update_options()
+          }
+        }), input, "", name_name, type_name)
+        population_builder_simple_state$registered <- append(population_builder_simple_state$registered, name_name)
+      }
+
+    }
+
+    out
+  })
+
+  observeEvent(input$population_simple_add, {
+    message("adding variable ", length(population_builder_simple_state$variables))
+    population_builder_simple_state$variables <- append(population_builder_simple_state$variables, c(new="Normal"))
+  }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
   output$population_builder_hierarchical <- renderUI("TBD2")
 
   update_options <- function(){
-#
-#     options <- c(outcome_variable_names=input$reveal_outcome_variable_names,
-#                  assignment_variable_names=input$reveal_assignment_variable_names,
-#                  attrition_variable_name=input$reveal_attrition_variable_name,
-#                  outcome_function=input$reveal_outcome_function)
-#
-#     options <- Filter(nchar, options)
-#     options <- paste(names(options), options, sep="=", collapse =", ")
+
+    if(input$population_mode == "Simple"){
+      options <- c( sprintf('`N=%d`', input$population_simple_N),
+                    mapply(type_to_variable_declaration,
+                           fmt="%s=%s(%s%s)",
+                           name=names(population_builder_simple_state$variables),
+                           type=population_builder_simple_state$variables,
+                           arg="N" )
+                )
+
+    } else if(input$population_mode == "Hierarchical"){
+      options <- NA_character_
+    }
+
+    options <- paste(options, collapse=", ")
 
     updateTextInput(session, "edit_args", value=options)
   }
 
-  observe_i_and_update(update_options, input, "population_")
+  observe_i_and_update(update_options, input, "population_", "simple_N")
 
 }
 

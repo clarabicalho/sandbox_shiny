@@ -5,7 +5,7 @@
 
 
 builder.ui <- material_page(
-  title = "Design Builder",
+  title = "Declare Design Builder",
   nav_bar_color = nav_bar_color,
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
   includeCSS(system.file("css/materialize.css", package="DDshiny")),
@@ -68,6 +68,7 @@ buildStep <- function(step,i){
                         shiny::tags$div(step$args),
                         actionButton(sprintf("edit_%i_up", i), "\U25B4", onclick=sprintf(js, "edit_up", i)),
                         actionButton(sprintf("edit_%i_down", i), "\U25BE", onclick=sprintf(js, "edit_down", i)),
+                        actionButton(sprintf("edit_%i_del", i), "\U2718", onclick=sprintf(js, "edit_delete", i)),
                         actionButton(sprintf("editor_%i", i), "Edit...", onclick=sprintf(js, "edit_open", i),
                                      `data-target`="editor", class="waves-effect waves-light shiny-material-modal-trigger btn")
                         )
@@ -231,7 +232,7 @@ builder.server <- function(input, output, clientData, session) {
 
   })
 
-  observeEvent(input$edit_delete, {
+  observeEvent(input$edit_delete_btn, {
      i <- DD$editing
      session$sendCustomMessage(type = "closeModal", "#editor")
 
@@ -261,6 +262,14 @@ builder.server <- function(input, output, clientData, session) {
     if(i != length(DD$steps))  DD$steps[i + 0:1] <- DD$steps[i + 1:0]
 
   })
+
+  observeEvent(input$edit_delete, {
+    i <- input$edit_delete
+    message("deleting", i)
+    DD$steps[i] <- NULL
+
+  })
+
 
   output$editor_modal <- renderUI({
     #### Editor dialog
@@ -299,7 +308,7 @@ builder.server <- function(input, output, clientData, session) {
       uiOutput("step_detail_tabs"),
       actionButton("edit_save", "Save"),
       actionButton("edit_cancel", "Cancel"),
-      if(!DD$add)actionButton("edit_delete", "Delete")
+      if(!DD$add)actionButton("edit_delete_btn", "Delete")
     )
   })
 

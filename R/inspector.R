@@ -201,6 +201,18 @@ inspector.server <- function(input, output, clientData, session) {
 
     }
 
+    if("topic" %in% names(query)){
+      fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
+      if(file.exists(fname)) {
+        load(fname, envir = .GlobalEnv)
+        DD$precomputed <- TRUE
+        DD$design <- designer
+        return(NULL)
+      }
+
+    }
+
+
     welcome
   })
 

@@ -80,7 +80,8 @@ buildStep <- function(step,i){
 
 builder.server <- function(input, output, clientData, session) {
 
-  require(DeclareDesign)
+  library(DeclareDesign)
+  library(shinyBS)
 
   set.seed(20171121) # For Demo TODO
 

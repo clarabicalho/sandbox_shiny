@@ -124,6 +124,8 @@ inspector.server <- function(input, output, clientData, session) {
   # require(pryr)
   # require(base64enc)
   library(ggplot2)
+  library(shinyBS)
+
 
 
   DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",

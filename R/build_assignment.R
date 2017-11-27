@@ -44,6 +44,13 @@ steps_config <- shiny::tags$div(
 
 steps_dynamic <- function(input, output, session){
 
+  observeEvent(input$assignment_type, updateNumericInput(session, "assignment_param",
+                                                       label=paste0("Choose ",
+                                                                    switch(input$assignment_type, sra="prob_each", input$assignment_type),
+                                                                    ":")
+  ))
+
+
   output$assignment_block_chooser <- renderUI({
     message("hiarylah");
     if(isTRUE(input$assignment_block)) {

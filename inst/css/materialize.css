@@ -3,3 +3,13 @@
 /*  font-variant: small-caps; */
 
 }
+
+
+.btn {
+  background-color: #039be5;
+}
+
+.btn:hover {
+  background-color: #03a9f4;
+  color: white;
+}

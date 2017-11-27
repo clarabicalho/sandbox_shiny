@@ -1,7 +1,7 @@
 ### File is name aaa to note have to manually specify file collation - we will just use A-Z ordering. -- NJF 11/21
 
 ### Small bits of global config
-nav_bar_color = "blue lighten-2"
+nav_bar_color = " light-blue darken-3"
 
 
 ### actual helpers

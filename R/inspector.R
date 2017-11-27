@@ -126,7 +126,7 @@ inspector.server <- function(input, output, clientData, session) {
   library(ggplot2)
   library(shinyBS)
 
-
+  session$allowReconnect("force") #TODO
 
   DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",
                          precomputed=FALSE, observers=list())

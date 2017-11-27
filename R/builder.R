@@ -85,6 +85,8 @@ builder.server <- function(input, output, clientData, session) {
 
   set.seed(20171121) # For Demo TODO
 
+  session$allowReconnect("force") #TODO
+
   DD <- reactiveValues(steps=default_builder, editing=-1, add=FALSE)
 
   tmpfile <- tempfile()

@@ -305,7 +305,6 @@ builder.server <- function(input, output, clientData, session) {
 
     material_card("",
       selectInput("edit_type", "Type:", steps_labeled, step$type),
-      textInput("edit_args", "Options", step$args),
       uiOutput("step_detail_tabs"),
       actionButton("edit_save", "Save"),
       actionButton("edit_cancel", "Cancel"),
@@ -316,10 +315,15 @@ builder.server <- function(input, output, clientData, session) {
 
   output$step_detail_tabs <- renderUI({
     session$userData[["DD"]] <- DD
+    i <- DD$editing
+    step <- if(!DD$add) DD$steps[[i]] else mk_step(DECLARE_POPULATION, "")
+
+
     selected_step <- step_obj[[input$edit_type]]
     x <- selected_step$config
-    tabsetPanel(selected = 'c',
-                tabPanel("Configure", value='c', x),
+    tabsetPanel(selected = 's',
+                tabPanel("Simple", value='s', x),
+                tabPanel("Advanced", value='a', textInput("edit_args", "Options", step$args)),
                 tabPanel("Help", value='h', selected_step$help)
     )
   })

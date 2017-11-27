@@ -32,10 +32,11 @@ steps_dynamic <- function(input, output, session){
 
   update_options <- function(){
 
+
     options <- paste(collapse=", ", c(
-      input$estimand_formula,
-      if(input$estimator_model         != "") sprintf("model=%s", input$estimand_subset),
-      if(input$estimator_coefficient   != "") sprintf("coefficient_name='%s'", input$estimand_label),
+      input$estimator_formula,
+      if(input$estimator_model         != "") sprintf("model=%s", input$estimator_model),
+      if(input$estimator_coefficient   != "") sprintf("coefficient_name='%s'", input$estimator_coefficient),
       if(input$estimator_estimand      != "") sprintf("estimand='%s'", input$estimator_estimand),
       if(input$estimator_label         != "") sprintf("label='%s'", input$estimator_label)
     ))

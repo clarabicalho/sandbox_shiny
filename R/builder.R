@@ -29,7 +29,7 @@ builder.ui <- material_page(
       width=4,
 
       material_card("Design Steps",
-      shiny::tags$div(style="overflow-y: scroll; height: 500px",
+      shiny::tags$div(style="overflow-y: scroll; height: 600px",
         uiOutput("cards")
       ),
       actionButton("add_step", "[+] Add Step", `data-target`="editor", class="waves-effect waves-light shiny-material-modal-trigger btn"),

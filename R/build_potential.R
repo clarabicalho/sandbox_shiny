@@ -15,7 +15,7 @@ step_help_text <- shiny::tags$div(
 
 steps_config <- shiny::tags$div(
 
-  selectInput("potential_type", "Outcome Type:", c("Binary", "Likert", "Normal")),
+  selectInput("potential_type", "Outcome Type:", c("Binary", "Likert", "Normal", "Identity")),
 
   textInput("potential_outcome_name", "Outcome Name", "Y"),
 
@@ -38,9 +38,9 @@ steps_dynamic <- function(input, output, session){
   update_options <- function(){
 
     options <- sprintf ("%s~%s(%s%s)",  input$potential_outcome_name,
-                        switch(input$potential_type, Binary="draw_binary", Likert="draw_discrete", "Normal"="rnorm"),
-                        input$potential_condition_variable,
-                        switch(input$potential_type, Likert=", breaks=1:7", "")
+                        switch(input$potential_type, Binary="draw_binary", Likert="draw_discrete", Normal="rnorm", ""),
+                        switch(input$potential_type, Normal=sprintf("n=length(%s), ", input$potential_condition_variable), input$potential_condition_variable),
+                        switch(input$potential_type, Likert=", breaks=1:7", Normal=input$potential_condition_variable, "")
                         )
 
     if(isTRUE(input$potential_condition_names != ""))

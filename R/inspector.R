@@ -167,6 +167,7 @@ inspector.server <- function(input, output, clientData, session) {
 
     if(DD$precomputed){
       boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal( material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
+      boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
       boxes[[length(boxes)+ 1]] <-  tags$script(
            "$(document).on('change', 'select', function () {
                 Shiny.onInputChange('run', Math.random());

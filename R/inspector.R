@@ -98,7 +98,7 @@ inspector.ui <- material_page(
       uiOutput("descriptionPanel"),
       bsCollapse(id="outputCollapse", open="About",
         bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-        bsCollapsePanel("Citation", verbatimTextOutput("citationPanel")),
+        bsCollapsePanel("Citation", uiOutput("citationPanel")),
         bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel") , plotOutput("diagnosticsPlot")),
         bsCollapsePanel("Power", uiOutput("powerPanel")),
         bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
@@ -432,7 +432,7 @@ inspector.server <- function(input, output, clientData, session) {
     output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
 
 
-    output$citationPanel <- renderPrint(cite_design(DD$design_instance))
+    output$citationPanel <- renderUI(HTML(format(DD$design_instance$citation, style="html")))
 
     output$summaryPanel  <- renderUI({
       pretty_summary(summary(DD$design_instance))

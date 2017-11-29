@@ -69,7 +69,7 @@ pretty_summary <- function(x) {
 
 
     if (!is.null(x$citation)) {
-      shiny::tags$p("Citation:", shiny::tags$br, x$citation)
+      material_card("Citation:", HTML(format(x$citation, style="html")))
     }
   )
 

@@ -49,7 +49,7 @@ builder.ui <- material_page(
                                  shiny::tags$p("Number of bootstrap draws: 10"),
                                  tableOutput("diagnosisPanel")),
                  bsCollapsePanel("About DeclareDesign Builder", value="About",
-                                 p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
+                                 #p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
                                  p("This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
                    )
         )

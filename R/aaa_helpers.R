@@ -97,7 +97,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
     },
 
     if (!is.null(formulae)) {
-      shiny::tags$p("Formula:", deparse(formula))
+      shiny::tags$p("Formula:", deparse(formulae))
     },
 
     if (!is.null(quantities_added)) {

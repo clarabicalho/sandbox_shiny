@@ -153,6 +153,8 @@ dd_theme <-
       theme(
         axis.ticks = element_blank(),
         axis.line = element_blank(),
+        axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"),
         panel.border = element_blank(),
         panel.grid.major = element_line(color = '#eeeeee'),
         strip.background = element_blank(),

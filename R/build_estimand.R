@@ -16,9 +16,9 @@ step_help_text <- shiny::tags$div(
 
 steps_config <- shiny::tags$div(
 
-  textInput("estimand_options", "Estimand"),
+  textInput("estimand_options", "Estimand", "ATE=mean(Y_Z_1 - Y_Z_0)"),
   textInput("estimand_subset", "Subset", ""),
-  textInput("estimand_label", "Label", ""),
+  textInput("estimand_label", "Label", "ATE"),
   textInput("estimand_function", "Custom Estimand Function", "")
 )
 

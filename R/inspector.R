@@ -352,7 +352,8 @@ inspector.server <- function(input, output, clientData, session) {
       # message(Sys.time(), "a")
       sims <- get_simulations(DD$diagnosis)
       if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
-      sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2, labels = c("Not Covered", "Covered"))
+      sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2,
+                             labels = c("Estimand not covered by confidence interval", "Estimand covered by confidence interval"))
       sims$estimator_label <- as.factor(sims$estimator_label)
       sims$estimand_label <- as.factor(sims$estimand_label)
 

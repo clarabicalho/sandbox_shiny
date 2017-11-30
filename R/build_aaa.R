@@ -10,7 +10,7 @@ DECLARE_ESTIMATOR="declare_estimator"
 mk_step <- function(type, args) list(type=type, args=args)
 default_builder <- list(mk_step(DECLARE_POPULATION,         '`N=100`,noise=rnorm(N)'),
                         mk_step(DECLARE_POTENTIAL_OUTCOMES, 'Y~Z+noise'),
-                        mk_step(DECLARE_ESTIMAND,           'ATE=mean(Y_Z_1 - Y_Z_0), label="ATE"'),
+                        mk_step(DECLARE_ESTIMAND,           'mean(Y_Z_1 - Y_Z_0), label="ATE"'),
                         mk_step(DECLARE_SAMPLING,           '`n=20`'),
                         mk_step(DECLARE_ASSIGNMENT,         '`m=10`'),
                         mk_step(REVEAL_OUTCOMES,            ''),

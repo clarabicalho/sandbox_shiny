@@ -6,7 +6,7 @@ nav_bar_color = " light-blue darken-3"
 
 ### actual helpers
 
-pretty_diagnoses <- function(df, digits=4){
+pretty_diagnoses <- function(df, digits=3){
   require(reshape2)
 
   ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
@@ -25,7 +25,7 @@ pretty_diagnoses <- function(df, digits=4){
     secol <- sprintf('se(%s)', col)
     if( secol %in% names(df)) {
       se <- sprintf(myfmt, df[[secol]])
-      x <- sprintf(paste('%s(%s)'), x, se)
+      x <- sprintf(paste('%s (%s)'), x, se)
     }
     ret[[title]] <- x
   }

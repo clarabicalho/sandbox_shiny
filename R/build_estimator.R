@@ -19,10 +19,10 @@ step_help_text <- shiny::tags$div(
 
 
 steps_config <- shiny::tags$div(
-  textInput("estimator_formula", "Formula", ""),
+  textInput("estimator_formula", "Formula", "Y~Z"),
   selectInput("estimator_model", "Model", c("estimatr::difference_in_means", "estimatr::lm_robust", "lm", "glm")),
   textInput("estimator_coefficient", "Coefficient"),
-  textInput("estimator_estimand", "Estimand"),
+  textInput("estimator_estimand", "Estimand", "ATE"),
   textInput("estimator_label", "Label", "")
 )
 

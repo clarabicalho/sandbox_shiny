@@ -182,7 +182,6 @@ inspector.server <- function(input, output, clientData, session) {
       });"
       )
 
-
     }
 
     boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
@@ -198,7 +197,12 @@ inspector.server <- function(input, output, clientData, session) {
       fname <- query[["file"]]
       if(file.exists(fname)){
         DD$design <- readRDS(fname)
-        return(NULL)
+        message("loaded sidefile")
+        return(shiny::tags$script("
+            console.log('sidefile loaded')
+            Shiny.onInputChange('import_button', 99999)
+        "))
+
       }
 
 
@@ -210,7 +214,11 @@ inspector.server <- function(input, output, clientData, session) {
         load(fname, envir = .GlobalEnv)
         DD$precomputed <- TRUE
         DD$design <- designer
-        return(NULL)
+        message("loaded topic")
+        return(shiny::tags$script("
+            console.log('topic loaded')
+            Shiny.onInputChange('import_button', 99999)
+        "))
       }
 
     }
@@ -221,7 +229,7 @@ inspector.server <- function(input, output, clientData, session) {
 
 
   output$diagnosticParameters <- renderUI({
-    if(!DD$precomputed) diagnostic_params;
+    if(!DD$precomputed) diagnostic_params
   })
 
 
@@ -288,42 +296,45 @@ inspector.server <- function(input, output, clientData, session) {
     input$run;
     input$import_button
     },{
+      do_run()
+    })
 
-    message("Run Button Clicked;\n")
+  do_run <- function() {
+      message("Run Button Clicked;\n")
 
-    design <- DD$design
+      design <- DD$design
 
-    DD$args <- list()
+      DD$args <- list()
 
-    # browser()
-    for(n in names(formals(design))){
-      DD$args[[n]] <- as.numeric(input[[paste0("d_", n)]])
+      # browser()
+      for(n in names(formals(design))){
+        DD$args[[n]] <- as.numeric(input[[paste0("d_", n)]])
+      }
+
+      message("instantiating design...\n")
+      if(exists("DEBUG", globalenv())) browser()
+      DD$design_instance <- tryCatch(do.call(design, DD$args), error=function(e) 9999999)
+      if(identical(DD$design_instance, 9999999)) {
+        DD$diagnosis <- NULL
+        return() # bail out
+      }
+
+      if(!is.null(attr(DD$design_instance, "diagnosis"))){
+        DD$diagnosis <- attr(DD$design_instance, "diagnosis")
+        return()
+      }
+
+      message("Running diagnosis")
+      # browser()
+      withProgress(
+        DD$diagnosis <- diagnose_design(original_design=do.call(DD$design, list()),
+                                        updated_design=DD$design_instance,
+                                        sims = as.numeric(input$d_sims),
+                                        bootstrap_sims = as.numeric(input$d_draws))
+      )
+
+      # browser()
     }
-
-    message("instantiating design...\n")
-    if(exists("DEBUG", globalenv())) browser()
-    DD$design_instance <- tryCatch(do.call(design, DD$args), error=function(e) 9999999)
-    if(identical(DD$design_instance, 9999999)) {
-      DD$diagnosis <- NULL
-      return() # bail out
-    }
-
-    if(!is.null(attr(DD$design_instance, "diagnosis"))){
-      DD$diagnosis <- attr(DD$design_instance, "diagnosis")
-      return()
-    }
-
-    message("Running diagnosis")
-    # browser()
-    withProgress(
-      DD$diagnosis <- diagnose_design(original_design=do.call(DD$design, list()),
-                                      updated_design=DD$design_instance,
-                                      sims = as.numeric(input$d_sims),
-                                      bootstrap_sims = as.numeric(input$d_draws))
-    )
-
-    # browser()
-  })
 
 
     output$diagnosticsPanel <-    renderTable({

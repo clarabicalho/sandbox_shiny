@@ -13,7 +13,7 @@ help_panel <- shiny::tags$div(
 config_panel <- shiny::tags$div(
 
   selectInput("sampling_type", "Sampling Type:", c("Complete (n)"="n", "Complete (p)"="p", "SRS (p)"="srs")),
-  numericInput("sampling_param", "Param", 0),
+  numericInput("sampling_param", "Param", 20),
 
 
   material_checkbox("sampling_strata", "Strata:", FALSE),

@@ -27,7 +27,7 @@ steps_config <- shiny::tags$div(
                                                        "Multi Arm (m)"="m_each",
                                                        "Multi Arm (p)"="prob_each",
                                                        "SRA (probability)"="sra")),
-  textInput("assignment_param", "Param", 0),
+  textInput("assignment_param", "Param", 10),
 
 
   material_checkbox("assignment_block", "Block:", FALSE),

@@ -352,7 +352,7 @@ inspector.server <- function(input, output, clientData, session) {
       # message(Sys.time(), "a")
       sims <- get_simulations(DD$diagnosis)
       if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
-      sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2, labels = c("OOB", "COV"))
+      sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2, labels = c("Not Covered", "Covered"))
       sims$estimator_label <- as.factor(sims$estimator_label)
       sims$estimand_label <- as.factor(sims$estimand_label)
 
@@ -370,10 +370,17 @@ inspector.server <- function(input, output, clientData, session) {
         # geom_point(aes(y=est), size=.5) +
         # geom_point(aes(y=estimand, col=black), alpha=.8) +
         geom_hline(aes(yintercept=mean(estimand))) +
+        geom_text(aes(x=x, y=y, label=label),
+                  data=function(df){
+                    data.frame(x=min(df$est),
+                               y=mean(df$estimand),
+                               label=sprintf('  Avg Estimand:\n  %4.3f', mean(df$estimand)),
+                               stringsAsFactors = FALSE)
+                    }, hjust='left') +
         facet_wrap(estimand_label~estimator_label) +
         ylab("Estimate") +
         scale_x_continuous(labels=NULL, breaks = NULL, name='') +
-        scale_color_discrete(drop=FALSE, guide=FALSE) +
+        scale_color_discrete(drop=FALSE, name = '') +
         # scale_fill_discrete(guide=FALSE)+
         # coord_fixed() +
         coord_flip() +
@@ -409,6 +416,7 @@ inspector.server <- function(input, output, clientData, session) {
         powerdf <- rbind.data.frame(powerdf, diag, stringsAsFactors = FALSE)
       }
 
+      powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
 
       ggplot(powerdf) + aes(x=N, y=power, ymin=power-`se(power)`, ymax=power+`se(power)`,
                             group=estimator_label, color=estimator_label, fill=estimator_label) +

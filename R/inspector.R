@@ -405,7 +405,7 @@ inspector.server <- function(input, output, clientData, session) {
         geom_point() +
         geom_ribbon(alpha=.3) +
         scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-        dd_theme() + facet_grid(~estimand_label) #+ scale_fill_discrete(guide=FALSE)
+        dd_theme() + facet_grid(~estimand_label) + labs(fill="",color="")
 
 
 

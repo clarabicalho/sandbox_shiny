@@ -8,6 +8,7 @@ builder.ui <- material_page(
   title = "Declare Design Builder",
   nav_bar_color = nav_bar_color,
   shiny::tags$link(href="https://fonts.googleapis.com/icon?family=Material+Icons", rel="stylesheet"),
+  shiny::tags$title("Declare Design Builder"),
   includeCSS(system.file("css/materialize.css", package="DDshiny")),
 
   bootstrapLib(),

@@ -70,7 +70,7 @@ inspector.ui <- material_page(
           $(name).modal("close");
         });
   '),
-
+  shiny::tags$title("Declare Design Inspector"),
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),

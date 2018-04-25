@@ -15,7 +15,7 @@ pretty_diagnoses <- function(df, digits=3){
   ids <- names(ret)
 
   data_columns <- names(df)
-  data_columns <- data_columns[grep('^se[(]|_label$|_ID$', data_columns, invert = TRUE)]
+  data_columns <- data_columns[grep('^se[(]|_label$|_ID$|coefficient$', data_columns, invert = TRUE)]
 
   myfmt <- sprintf('%%.%if', digits)
 
@@ -32,10 +32,10 @@ pretty_diagnoses <- function(df, digits=3){
 
   ret <- melt(ret, ids, variable.name="Diagnosand")
 
-  if('Design' %in% ids){
-    ret <- dcast(ret, ...~Design, value.var = "value")
-
-  }
+  # if('Design' %in% ids){
+  #   ret <- dcast(ret, ...~Design, value.var = "value")
+  #
+  # }
   ret
 }
 
@@ -43,7 +43,7 @@ pretty_summary <- function(x) {
   # browser()
 
   step_summary <- with(x,
-                       mapply(pretty_summary_step, seq_along(causal_order_expr), variables_added, variables_modified, quantities_added, causal_order_expr, function_types, N, formulae,
+                       mapply(pretty_summary_step, seq_along(function_types), variables_added, variables_modified, quantities_added, function_types, N, formulae,
                               SIMPLIFY = FALSE)
   )
 
@@ -78,9 +78,9 @@ pretty_summary <- function(x) {
   ret
 }
 
-pretty_summary_step <- function(i, variables_added, variables_modified, quantities_added, causal_order_expr, function_types, N, formulae) {
+pretty_summary_step <- function(i, variables_added, variables_modified, quantities_added, function_types, N, formulae) {
 
-  step_name <- deparse(causal_order_expr)
+  # step_name <- deparse(causal_order_expr)
   step_class <-
     ifelse(
       function_types != "unknown",
@@ -90,7 +90,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
 
 
   ret <- material_card(
-    paste("Step", i, "(", step_class, "):", step_name),
+    paste0("Step ", i, " (", step_class, "):"),
 
     if (!is.null(N)) {
       shiny::tags$p(N)
@@ -202,3 +202,7 @@ round_df <- function(df, digits){
   df
 }
 
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}

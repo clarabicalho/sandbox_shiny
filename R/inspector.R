@@ -148,7 +148,7 @@ inspector.server <- function(input, output, clientData, session) {
     # loadDesign <- function(output, design_fn) {
 
     design_fn <- req(DD$design)
-    v <- attr(design_fn, "shiny_arguments")
+    v <- get_shiny_arguments(design_fn)
     f <- names(v)
     # f <- names(formals(design_fn))[-length(formals(design_fn))] #remove `code` parameter
     # v <- lapply(f, eval) # here we need to change to read from the attribute
@@ -337,7 +337,7 @@ inspector.server <- function(input, output, clientData, session) {
 
   design_id <- reactive({
     if(DD$precomputed){
-      shiny_args <- names(attr(DD$design, "shiny_arguments"))
+      shiny_args <- names(get_shiny_arguments(DD$design))
       t <- c()
       for(n in shiny_args){
         v <- which(DD$diagnosis$diagnosands[[n]] == as.numeric(input[[paste0("d_", n)]]))
@@ -351,7 +351,7 @@ inspector.server <- function(input, output, clientData, session) {
     diag <- lapply(DD$diagnosis, function(o){
       o[o$design_ID == design_id(),]
     })
-    if(DD$precomputed) diag$diagnosands <- diag$diagnosands[,!names(diag$diagnosands) %in% names(attr(DD$design, "shiny_arguments"))]
+    if(DD$precomputed) diag$diagnosands <- diag$diagnosands[,!names(diag$diagnosands) %in% names(get_shiny_arguments(DD$design))]
     return(diag)
   })
 
@@ -429,13 +429,14 @@ inspector.server <- function(input, output, clientData, session) {
 
   output$diagnosticsPanel <-    renderTable({
     # message(Sys.time(), "a")
-    diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
+    ##diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
     # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
     # diag_tab
     # message(Sys.time(), "b")
     # on.exit(message(Sys.time(), "c"))
-    pretty_diagnoses(diag_tab)
+    ##pretty_diagnoses(diag_tab)
+    as.data.frame(design_id())
   })
 
   # NOTE: need to index simulations dependent on parameters chosen in each input$d_`arg`.
@@ -517,7 +518,7 @@ inspector.server <- function(input, output, clientData, session) {
 
     # browser()
     # N_formal <- eval(formals(DD$design)$N)
-    N_formal <- attr(DD$design, "shiny_arguments")$N
+    N_formal <- get_shiny_arguments(DD$design)$N
 
     args <- DD$shiny_args
 
@@ -527,7 +528,7 @@ inspector.server <- function(input, output, clientData, session) {
     if(DD$precomputed){
       powerdf <- get_diagnosands(DD$diagnosis)
       #restrict to cases where all other parameters match input
-      fix_arg <- names(attr(DD$design, "shiny_arguments"))[!names(attr(DD$design, "shiny_arguments")) %in% "N"]
+      fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% "N"]
       for(col in fix_arg){
         powerdf <- powerdf[powerdf[[col]]==input[[paste0("d_",col)]],]
       }
@@ -546,13 +547,13 @@ inspector.server <- function(input, output, clientData, session) {
 
     powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
 
-    ggplot(powerdf) + aes(x=N, y=power, ymin=power-2*sd(power), ymax=power+2*sd(power),
+    ggplot(powerdf) + aes(x=N, y=power, #ymin=power-2*sd(power), ymax=power+2*sd(power),
                           group=estimator_label, color=estimator_label, fill=estimator_label) +
       geom_line() +
       geom_point() +
-      geom_ribbon(alpha=.3) +
+      # geom_ribbon(alpha=.3) +
       scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-      dd_theme() + facet_grid(~estimand_label) + labs(fill="",color="")
+      dd_theme() +  labs(fill="",color="")
 
 
 
@@ -588,9 +589,9 @@ inspector.server <- function(input, output, clientData, session) {
 
   output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
 
-  # output$citationPanel <- renderUI(
-  #   HTML(format(DD$design_instance$citation, style="html"))
-  # )
+  output$citationPanel <- renderUI(
+    HTML(format(DD$design_instance$citation, style="html"))
+  )
 
   output$summaryPanel  <- renderUI({
     # pretty_summary(
@@ -611,7 +612,7 @@ inspector.server <- function(input, output, clientData, session) {
       paste0("design-", Sys.Date(), ".RDS")
     },
     content = function(file) {
-      saveRDS(DD$design_instance, file)
+      saveRDS(DD$design_instance(), file)
     }
   )
 
@@ -626,11 +627,12 @@ inspector.server <- function(input, output, clientData, session) {
 
   #here we need to change to read an Rmd files from the vignettes folder (check topics)
   output$vignette <- renderUI({
-    # if(!requireNamespace("base64enc")) return()
+    if(!requireNamespace("base64enc")) return()
     # vig <- vignette(topic) # topic gets loaded to global environment via design library
-    # vightml <- base64enc::base64encode(file.path(vig$Dir, "doc", vig$PDF))
-    # vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
-    # HTML(vightml)
+    vig <- vignette(input$import_library_dropdown) # topic gets loaded to global environment via design library
+    vightml <- base64enc::base64encode(file.path(vig$Dir, "doc", vig$PDF))
+    vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
+    HTML(vightml)
   })
 
     }

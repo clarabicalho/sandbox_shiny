@@ -9,5 +9,6 @@
 #' @import fabricatr
 #' @import randomizr
 #' @import estimatr
+#' @import DesignLibrary
 #' @name DDshiny
 NULL

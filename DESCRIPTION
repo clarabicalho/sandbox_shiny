@@ -7,6 +7,7 @@ Maintainer: DeclareDesign <team@declaredesign.org>
 Description: TODO.
 Depends: shiny,
     DeclareDesign (>= 0.6.0),
+    DesignLibrary,
     fabricatr,
     estimatr,
     randomizr,

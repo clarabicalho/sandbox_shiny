@@ -1,8 +1,8 @@
 
 functions <- ls("package:DesignLibrary")
 designers <- functions[grepl("_designer\\b",functions)]
-sims <- 2
-bootstraps <- 2
+sims <- 100
+bootstraps <- 100
 
 for(designer in designers){
 

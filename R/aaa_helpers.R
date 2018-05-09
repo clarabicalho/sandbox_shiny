@@ -68,10 +68,10 @@ get_shiny_diagnosis <- function(designer,sims) {
 
 #' @export
 #'
-get_or_run_shiny_diagnosis <- function(designer,sims,bootstrap,update_existing=FALSE) {
-  designer_name <- substitute(designer)
+get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootstrap,update_existing=FALSE) {
+  if(is.null(designer_name)) designer_name <- substitute(designer)
   design_name <- gsub(pattern = "_designer",replacement = "",x = designer_name)
-  file_name <- paste0(design_name,"_shiny_diagnosis.RDS")
+  file_name <- paste0("data/",design_name,"_shiny_diagnosis.RDS")
   parameters <- expand.grid(get_shiny_arguments(designer), stringsAsFactors = FALSE)
   if(update_existing==FALSE & file.exists(file_name)){
     diagnosis_list <- readRDS(file = file_name)

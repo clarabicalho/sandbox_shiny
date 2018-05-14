@@ -80,7 +80,7 @@ get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootst
     diagnosis_list <- DesignLibrary::get_shiny_diagnosis(designer,sims = sims)
     diagnosis <- diagnosis_list$diagnosis
     rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_ID))
-    parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),]
+    parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
     diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
     diagnosis_list$diagnosis <- diagnosis
     saveRDS(diagnosis_list, file_name)

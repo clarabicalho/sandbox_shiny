@@ -314,7 +314,7 @@ inspector.server <- function(input, output, clientData, session) {
       DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
     }
     DD$precomputed <- TRUE
-    diagnosis <- readRDS(paste0("../designs/vignettes/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+    diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
     DD$diagnosis <- diagnosis$diagnosis
     DD$args_code <- diagnosis$argument_list
   }, ignoreNULL=TRUE)

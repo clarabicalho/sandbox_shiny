@@ -528,8 +528,18 @@ inspector.server <- function(input, output, clientData, session) {
     # browser()
     if(DD$precomputed){
       powerdf <- get_diagnosands(DD$diagnosis)
+      if(input$import_library_dropdown %in% "block_cluster_two_arm"){
+        powerdf$N <- with(powerdf, N_blocks*N_clusters_in_block*N_i_in_cluster)
+      }
+
+      if(input$import_library_dropdown %in% "cluster_sampling"){
+        powerdf$N <- with(powerdf, n_clusters*n_subjects_per_cluster)
+      }
+
       #restrict to cases where all other parameters match input
       fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% "N"]
+      N_args <- c("N", "N_blocks", "N_clusters_in_block", "N_i_in_cluster", "n_clusters", "n_sujects_per_cluster")
+      fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% N_args]
       for(col in fix_arg){
         powerdf <- powerdf[powerdf[[col]]==input[[paste0("d_",col)]],]
       }

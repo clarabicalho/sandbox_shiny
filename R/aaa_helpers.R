@@ -77,7 +77,7 @@ get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootst
     diagnosis_list <- readRDS(file = file_name)
     diagnosis <- diagnosis_list$diagnosis
   } else {
-    diagnosis_list <- DesignLibrary::get_shiny_diagnosis(designer,sims = sims)
+    diagnosis_list <- get_shiny_diagnosis(designer,sims = sims)
     diagnosis <- diagnosis_list$diagnosis
     rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_ID))
     parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]

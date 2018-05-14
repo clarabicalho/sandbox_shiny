@@ -430,14 +430,14 @@ inspector.server <- function(input, output, clientData, session) {
 
   output$diagnosticsPanel <-    renderTable({
     # message(Sys.time(), "a")
-    ##diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
+    diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
     # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
     # diag_tab
     # message(Sys.time(), "b")
     # on.exit(message(Sys.time(), "c"))
-    ##pretty_diagnoses(diag_tab)
-    as.data.frame(design_id())
+    pretty_diagnoses(diag_tab)
+    # as.data.frame(design_id())
   })
 
   # NOTE: need to index simulations dependent on parameters chosen in each input$d_`arg`.

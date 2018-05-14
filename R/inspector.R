@@ -537,7 +537,6 @@ inspector.server <- function(input, output, clientData, session) {
       }
 
       #restrict to cases where all other parameters match input
-      fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% "N"]
       N_args <- c("N", "N_blocks", "N_clusters_in_block", "N_i_in_cluster", "n_clusters", "n_sujects_per_cluster")
       fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% N_args]
       for(col in fix_arg){
@@ -558,15 +557,24 @@ inspector.server <- function(input, output, clientData, session) {
 
     powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
 
-    ggplot(powerdf) + aes(x=N, y=power, #ymin=power-2*sd(power), ymax=power+2*sd(power),
-                          group=estimator_label, color=estimator_label, fill=estimator_label) +
+    p <- ggplot(powerdf) +
+      aes(x=N, y=power, #ymin=power-2*sd(power), ymax=power+2*sd(power),
+          group=estimator_label, color=estimator_label, fill=estimator_label) +
       geom_line() +
       geom_point() +
       # geom_ribbon(alpha=.3) +
       scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-      dd_theme() +  labs(fill="",color="")
+      dd_theme() +  labs(fill="",color="") #+ facet()
 
+    if(input$import_library_dropdown %in% "block_cluster_two_arm"){
+      p <- p + facet_grid(N_blocks ~ N_clusters_in_block, labeller = labeller(.rows = label_both, .cols = label_both))
+    }
 
+    if(input$import_library_dropdown %in% "cluster_sampling"){
+      p <- p + facet_grid(n_clusters ~ ., labeller=label_bquote("clusters"==.(n_clusters)))
+    }
+
+    p
 
   })
 

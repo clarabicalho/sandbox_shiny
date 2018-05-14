@@ -297,6 +297,7 @@ inspector.server <- function(input, output, clientData, session) {
     # my_design_library_path <- "../designs" #NOTE: adapt to final path
     # cached <- dir(paste0(my_design_library_path, "/R"), "_designer[.]R$", full.names = TRUE)
     cached <- str_replace(grep("designer$", ls(as.environment("package:DesignLibrary")), value = TRUE), "_designer", "")
+    cached <- intersect(cached, gsub("_shiny_diagnosis.RDS", "", list.files("data", pattern = ".RDS")))
     # cached <- c("simple_two_arm_designer", "regression_discontinuity_designer")
     # cached <- dir(my_design_library_path, "[.]Rdata$", full.names = TRUE)
     names(cached) <- unique(str_to_title(str_replace_all(str_replace(basename(cached), "[.]R$", ""), "_", " ")))

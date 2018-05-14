@@ -587,23 +587,14 @@ inspector.server <- function(input, output, clientData, session) {
     sims_tab
   }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
 
-  #check DD$args
   DD$code <- reactive({
     if(!is.null(attr(DD$design_instance(), "code"))){
-      attr(design_instance(), "code")
+      code <- attr(DD$design_instance(), "code")
+      paste(code, collapse = "\n")
     } else if(requireNamespace("pryr")){
-      if(DD$precomputed){
-        code_a <- args_code()
-        code_b <- paste(DD$design(code = TRUE), collapse="\n")
-        paste(paste(code_a, collapse = "\n"), "\n\n", code_b, collapse = "\n")
-      }else{
         code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$all_args())), collapse="\n")
-        # code <- paste(deparse(pryr::substitute_q(body(DD$design), as.list(args))), collapse="\n")
         gsub("[{]\n|\n[}]|[}]\n]", "", code) # remove surounding curly
-        # code <- gsub("design_code <- function()", "", code, fixed = TRUE) # remove surounding curly
-        # code <- gsub("[}].*?", "", code) # remove surounding curly
       }
-    }
   })
 
   output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))

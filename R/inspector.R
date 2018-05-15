@@ -562,13 +562,13 @@ inspector.server <- function(input, output, clientData, session) {
     }
 
     p <- ggplot(powerdf) +
-      aes(x=N, y=power, #ymin=power-2*sd(power), ymax=power+2*sd(power),
+      aes(x=N, y=power, ymin=power-2*`se(power)`, ymax=power+2*`se(power)`,
           group=estimator_label, color=estimator_label, fill=estimator_label) +
       geom_line() +
       geom_point() +
-      # geom_ribbon(alpha=.3) +
+      geom_ribbon(alpha=.3) +
       scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-      dd_theme() +  labs(fill="",color="") #+ facet()
+      dd_theme() +  labs(fill="",color="")
 
     if(input$import_library_dropdown %in% "block_cluster_two_arm"){
       p <- p + facet_grid(N_blocks ~ N_clusters_in_block, labeller = labeller(.rows = label_both, .cols = label_both))

@@ -347,6 +347,7 @@ inspector.server <- function(input, output, clientData, session) {
       t <- c()
       for(n in shiny_args){
         v <- which(DD$diagnosis$diagnosands[[n]] == as.numeric(input[[paste0("d_", n)]]))
+        v <- DD$diagnosis$diagnosands$design_ID[v]
         t <- c(t, v)
       }
       Mode(t)

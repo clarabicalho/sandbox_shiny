@@ -6,6 +6,11 @@
 ####
 
 library(DesignLibrary)
+library(shiny)
+library(shinymaterial)
+library(shinythemes)
+library(shinyBS)
+
 source("R/aaa_helpers.R")
 
 # welcome window ----------------------------------------------------------

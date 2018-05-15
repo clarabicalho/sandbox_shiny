@@ -557,6 +557,10 @@ inspector.server <- function(input, output, clientData, session) {
 
     powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
 
+    if(input$import_library_dropdown %in% "mediation_analysis"){
+      powerdf$estimator_label <- paste0(powerdf$estimator_label, " (", powerdf$coefficient, ")")
+    }
+
     p <- ggplot(powerdf) +
       aes(x=N, y=power, #ymin=power-2*sd(power), ymax=power+2*sd(power),
           group=estimator_label, color=estimator_label, fill=estimator_label) +

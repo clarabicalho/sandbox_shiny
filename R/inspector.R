@@ -431,6 +431,9 @@ inspector.server <- function(input, output, clientData, session) {
   output$diagnosticsPanel <-    renderTable({
     # message(Sys.time(), "a")
     diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
+    if(DD$precomputed){
+      diag_tab <- dplyr::select(diag_tab, -design_ID)
+    }
     # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
     # diag_tab
@@ -537,7 +540,7 @@ inspector.server <- function(input, output, clientData, session) {
       }
 
       #restrict to cases where all other parameters match input
-      N_args <- c("N", "N_blocks", "N_clusters_in_block", "N_i_in_cluster", "n_clusters", "n_sujects_per_cluster")
+      N_args <- c("N", "N_blocks", "N_clusters_in_block", "N_i_in_cluster", "n_clusters", "n_subjects_per_cluster")
       fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% N_args]
       for(col in fix_arg){
         powerdf <- powerdf[powerdf[[col]]==input[[paste0("d_",col)]],]

@@ -186,24 +186,24 @@ inspector.server <- function(input, output, clientData, session) {
 
 
     #NOTE: Here is where we would need to change to take the vignette that is saved/exported by the function called on design (@Jasper)
-    if(DD$precomputed){
-      boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
-      boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
-      boxes[[length(boxes)+ 1]] <-  tags$script(
-        "$(document).on('change', 'select', function () {
-        Shiny.onInputChange('run', Math.random());
-        //Shiny.onInputChange('lastSelectName',name);
-        // to report changes on the same selectInput
-        //Shiny.onInputChange('lastSelect', Math.random());
-    });")
-      boxes[[length(boxes) + 1]] <- tags$script("
-                                                $(document).ready(function(){
-                                                // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
-                                                $('.modal').modal()
-                                                });"
-      )
-
-  }
+  #   if(DD$precomputed){
+  #     boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
+  #     boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
+  #     boxes[[length(boxes)+ 1]] <-  tags$script(
+  #       "$(document).on('change', 'select', function () {
+  #       Shiny.onInputChange('run', Math.random());
+  #       //Shiny.onInputChange('lastSelectName',name);
+  #       // to report changes on the same selectInput
+  #       //Shiny.onInputChange('lastSelect', Math.random());
+  #   });")
+  #     boxes[[length(boxes) + 1]] <- tags$script("
+  #                                               $(document).ready(function(){
+  #                                               // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
+  #                                               $('.modal').modal()
+  #                                               });"
+  #     )
+  #
+  # }
 
     boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
 
@@ -650,14 +650,14 @@ inspector.server <- function(input, output, clientData, session) {
   )
 
   #here we need to change to read an Rmd files from the vignettes folder (check topics)
-  output$vignette <- renderUI({
-    if(!requireNamespace("base64enc")) return()
-    # vig <- vignette(topic) # topic gets loaded to global environment via design library
-    vig <- vignette(input$import_library_dropdown) # topic gets loaded to global environment via design library
-    vightml <- base64enc::base64encode(file.path(vig$Dir, "doc", vig$PDF))
-    vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
-    HTML(vightml)
-  })
+  # output$vignette <- renderUI({
+  #   if(!requireNamespace("base64enc")) return()
+  #   # vig <- vignette(topic) # topic gets loaded to global environment via design library
+  #   vig <- vignette(input$import_library_dropdown) # topic gets loaded to global environment via design library
+  #   vightml <- base64enc::base64encode(file.path(vig$Dir, "doc", vig$PDF))
+  #   vightml <- sprintf('<iframe src="data:text/html;base64,%s" height="500px" width="100%%" frameborder=0 />', vightml   )
+  #   HTML(vightml)
+  # })
 
     }
 

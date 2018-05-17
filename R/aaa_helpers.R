@@ -127,6 +127,23 @@ pretty_diagnoses <- function(df, digits=3){
   ret
 }
 
+diagnosis_plot <- function(diagnostic_param){
+  # param    <- powerdf[[diagnostic_param]]
+  # param_se <- powerdf[[paste0("se(", diagnostic_param, ")")]]
+  powerdf <- gather(powerdf, param_name, param_value, bias, coverage, power)
+  powerdf <- gather(powerdf, param_name, param_se, `se(bias)`, `se(coverage)`, `se(power)`)
+
+  ggplot(powerdf) +
+    aes(x=, y=param_value, ymin=param-2*param_se, ymax=power+2*param_se,
+        group=estimator_label, color=estimator_label, fill=estimator_label) +
+    geom_line() +
+    geom_point() +
+    geom_ribbon(alpha=.3) +
+    scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
+    dd_theme() +  labs(fill="",color="")
+
+}
+
 pretty_summary <- function(x) {
   # browser()
 
@@ -240,7 +257,8 @@ get_author <- function(designer){
   classes <- sapply( help_text, function(x) attr(x, "Rd_tag"))
   author <- help_text[[grep("\\author", classes, fixed = TRUE)]]
   author <- paste(sapply(author, function(i) i[1]))
-  paste(author[grep("\\n", author, invert = TRUE)], collapse = ", ")
+  author <- gsub("\\n", "", author)
+  paste(author[!author %in% ""], collapse = ", ")
 }
 
 dd_theme <-

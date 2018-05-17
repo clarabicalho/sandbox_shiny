@@ -234,6 +234,14 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
 
 }
 
+get_author <- function(designer){
+  rdb_path <- file.path(system.file("help", package= "DesignLibrary"),"DesignLibrary")
+  help_text <- tools:::fetchRdDB(rdb_path, designer)
+  classes <- sapply( help_text, function(x) attr(x, "Rd_tag"))
+  author <- help_text[[grep("\\author", classes, fixed = TRUE)]]
+  author <- paste(sapply(author, function(i) i[1]))
+  paste(author[grep("\\n", author, invert = TRUE)], collapse = ", ")
+}
 
 dd_theme <-
   function() {

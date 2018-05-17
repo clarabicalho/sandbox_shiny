@@ -20,10 +20,11 @@ welcome <-         material_modal(
   button_text = "Modal",
   title = "Welcome",
   button_color = "red lighten-3",
-  actionButton("import_library", "Import from library..."),
-  actionButton("import_file", "Import from file..."),
-  actionButton("import_url", "Import from url..."),
-  uiOutput("import_panel_choice")
+  # actionButton("import_library", "Import from library..."),
+  # actionButton("import_file", "Import from file..."),
+  # actionButton("import_url", "Import from url..."),
+  # uiOutput("import_panel_choice")
+  renderUI(importLibrary)
 )
 
 
@@ -38,7 +39,7 @@ welcome[[3]] <-   shiny::tags$script("
 
 
 ### Different types of import dialogs
-importLibrary <- material_card("Import from Library",
+importLibrary <- material_card("Import from DesignLibrary",
                                uiOutput("import_library_ui"),
                                actionButton("import_button", "OK")
 )
@@ -254,18 +255,18 @@ inspector.server <- function(input, output, clientData, session) {
   })
 
 
-  observeEvent(input$import_library, {
-    DD$design <- NULL
-    output$import_panel_choice <- renderUI(importLibrary)
-  }, ignoreInit = TRUE)
-  observeEvent(input$import_url,     {
-    DD$design <- NULL
-    output$import_panel_choice <- renderUI(importUrl)
-  }, ignoreInit = TRUE)
-  observeEvent(input$import_file,    {
-    DD$design <- NULL
-    output$import_panel_choice <- renderUI(importFile)
-  }, ignoreInit = TRUE)
+  # observeEvent(input$import_library, {
+  #   DD$design <- NULL
+  #   output$import_panel_choice <- renderUI(importLibrary)
+  # }, ignoreInit = TRUE)
+  # observeEvent(input$import_url,     {
+  #   DD$design <- NULL
+  #   output$import_panel_choice <- renderUI(importUrl)
+  # }, ignoreInit = TRUE)
+  # observeEvent(input$import_file,    {
+  #   DD$design <- NULL
+  #   output$import_panel_choice <- renderUI(importFile)
+  # }, ignoreInit = TRUE)
 
 
   observeEvent(input$import_button, {

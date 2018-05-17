@@ -525,6 +525,7 @@ inspector.server <- function(input, output, clientData, session) {
     if(!DD$precomputed) return()
     plotOutput("powerPlot")
   })
+
   output$powerPlot <- renderPlot({
 
     # browser()
@@ -563,8 +564,6 @@ inspector.server <- function(input, output, clientData, session) {
       }
     }
 
-    # do.call(DD$design, args = list(N = 100, prob = .5, control_mean = 0, control_sd = 1, ate = 0, treatment_mean = "control_mean + ate", treatment_sd = control_sd, rho = 1, code = FALSE))
-
     powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
 
     if(input$import_library_dropdown %in% "mediation_analysis"){
@@ -579,6 +578,7 @@ inspector.server <- function(input, output, clientData, session) {
       geom_ribbon(alpha=.3) +
       scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
       dd_theme() +  labs(fill="",color="")
+
 
     if(input$import_library_dropdown %in% "block_cluster_two_arm"){
       p <- p + facet_grid(N_blocks ~ N_clusters_in_block, labeller = labeller(.rows = label_both, .cols = label_both))

@@ -664,7 +664,6 @@ inspector.server <- function(input, output, clientData, session) {
 
 #' @export
 DDinspector <- shinyApp(inspector.ui, inspector.server)
-DDinspector
 
 
 

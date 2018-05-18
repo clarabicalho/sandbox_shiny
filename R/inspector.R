@@ -108,8 +108,8 @@ inspector.ui <- material_page(
                     uiOutput("descriptionPanel"),
                     # verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
+                               # bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-                               bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel"),
                                                plotOutput("diagnosticsPlot")),
                                bsCollapsePanel("Power", uiOutput("powerPanel")),
@@ -611,10 +611,10 @@ inspector.server <- function(input, output, clientData, session) {
       }
   })
 
-  output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
+  output$descriptionPanel <- renderUI(HTML(paste(attr(DD$design, "description"), "Author: DeclareDesign Team", collapse = "\n")))
 
   output$citationPanel <- renderUI(
-    HTML(format(DD$design_instance$citation, style="html"))
+    HTML(format(get_author(paste0(input$import_library_dropdown, "_designer")), style="html"))
   )
 
   output$summaryPanel  <- renderUI({

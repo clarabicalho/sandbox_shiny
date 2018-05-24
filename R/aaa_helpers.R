@@ -95,6 +95,8 @@ nav_bar_color = " light-blue darken-3"
 ### actual helpers
 
 pretty_diagnoses <- function(df, digits=3){
+  require(reshape2)
+
   ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
   names(ret) <- str_replace(str_to_title(names(ret)), "_.*", "")
 
@@ -116,7 +118,7 @@ pretty_diagnoses <- function(df, digits=3){
     ret[[title]] <- x
   }
 
-  ret <- reshape2::melt(ret, ids, variable.name="Diagnosand")
+  ret <- melt(ret, ids, variable.name="Diagnosand")
 
   # if('Design' %in% ids){
   #   ret <- dcast(ret, ...~Design, value.var = "value")

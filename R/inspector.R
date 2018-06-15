@@ -33,9 +33,9 @@ welcome <- remove_close_button_from_modal(welcome)
 welcome[[2]][[1]] <- NULL# skip making outer button
 
 welcome[[3]] <-   shiny::tags$script("
-       $(document).ready(function(){
-        $('#welcome_modal').modal('open', {dismissible: false});
-       });")
+                                     $(document).ready(function(){
+                                     $('#welcome_modal').modal('open', {dismissible: false});
+                                     });")
 
 
 
@@ -76,11 +76,11 @@ inspector.ui <- material_page(
   title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('
-    Shiny.addCustomMessageHandler("closeModal",
-          function(name) {
-            $(name).modal("close");
-          });
-    '),
+              Shiny.addCustomMessageHandler("closeModal",
+              function(name) {
+              $(name).modal("close");
+              });
+              '),
   shiny::tags$title("Declare Design Inspector"),
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
@@ -90,11 +90,11 @@ inspector.ui <- material_page(
 
   #TODO This is a super gross way of getting the tooltips to update correctly.
   refresh_tips <- shiny::tags$script("
-          setInterval(function(){
-                console.log('HIARYLAH');
-                $('.tooltipped').tooltip({delay: 50});
-          }, 10*1000);
-      "),
+                                     setInterval(function(){
+                                     console.log('HIARYLAH');
+                                     $('.tooltipped').tooltip({delay: 50});
+                                     }, 10*1000);
+                                     "),
   uiOutput("welcome"),
   material_row(
     material_column(
@@ -114,7 +114,7 @@ inspector.ui <- material_page(
                                bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel"),
                                                plotOutput("diagnosticsPlot")),
                                bsCollapsePanel("Power", uiOutput("powerPanel")),
-                               bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
+                               bsCollapsePanel("Code", uiOutput("codePanel"),
                                                downloadButton("download_code", "Export Code...")),
                                bsCollapsePanel("Simulated Data", dataTableOutput("simulationPanel")),
                                bsCollapsePanel("About DeclareDesign Inspector", value="About",
@@ -122,7 +122,7 @@ inspector.ui <- material_page(
                                                # p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
                                                p("  This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
                                )
-                    #
+                               #
                     )
       )
     )
@@ -138,6 +138,7 @@ inspector.server <- function(input, output, clientData, session) {
   library(shinyBS)
   library(stringr)
   library(shinymaterial)
+  library(knitr)
 
   # session$allowReconnect("force") #TODO
 
@@ -187,31 +188,31 @@ inspector.server <- function(input, output, clientData, session) {
 
 
     #NOTE: Here is where we would need to change to take the vignette that is saved/exported by the function called on design (@Jasper)
-  #   if(DD$precomputed){
-  #     boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
-  #     boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
-  #     boxes[[length(boxes)+ 1]] <-  tags$script(
-  #       "$(document).on('change', 'select', function () {
-  #       Shiny.onInputChange('run', Math.random());
-  #       //Shiny.onInputChange('lastSelectName',name);
-  #       // to report changes on the same selectInput
-  #       //Shiny.onInputChange('lastSelect', Math.random());
-  #   });")
-  #     boxes[[length(boxes) + 1]] <- tags$script("
-  #                                               $(document).ready(function(){
-  #                                               // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
-  #                                               $('.modal').modal()
-  #                                               });"
-  #     )
-  #
-  # }
+    #   if(DD$precomputed){
+    #     boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
+    #     boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
+    #     boxes[[length(boxes)+ 1]] <-  tags$script(
+    #       "$(document).on('change', 'select', function () {
+    #       Shiny.onInputChange('run', Math.random());
+    #       //Shiny.onInputChange('lastSelectName',name);
+    #       // to report changes on the same selectInput
+    #       //Shiny.onInputChange('lastSelect', Math.random());
+    #   });")
+    #     boxes[[length(boxes) + 1]] <- tags$script("
+    #                                               $(document).ready(function(){
+    #                                               // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
+    #                                               $('.modal').modal()
+    #                                               });"
+    #     )
+    #
+    # }
 
     boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
 
 
     do.call(material_card, c(title="Design Parameters", boxes))
 
-})
+  })
 
   #REVIEW
   output$welcome <- renderUI({
@@ -245,10 +246,10 @@ inspector.server <- function(input, output, clientData, session) {
                                   "))
       }
 
-      }
+    }
 
     welcome
-    })
+  })
 
 
   output$diagnosticParameters <- renderUI({
@@ -605,11 +606,13 @@ inspector.server <- function(input, output, clientData, session) {
   DD$code <- reactive({
     if(!is.null(attr(DD$design_instance(), "code"))){
       code <- attr(DD$design_instance(), "code")
-      paste(code, collapse = "\n")
-    } else if(requireNamespace("pryr")){
-        code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$all_args())), collapse="\n")
-        gsub("[{]\n|\n[}]|[}]\n]", "", code) # remove surounding curly
-      }
+      code
+      # paste(code, collapse = "\n")
+    }
+    # } else if(requireNamespace("pryr")){
+    #     code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$all_args())), collapse="\n")
+    #     gsub("[{]\n|\n[}]|[}]\n]", "", code) # remove surounding curly
+    #   }
   })
 
   output$descriptionPanel <- renderUI(HTML(paste(attr(DD$design, "description"), "Author: DeclareDesign Team", collapse = "\n")))
@@ -627,7 +630,9 @@ inspector.server <- function(input, output, clientData, session) {
 
   })
 
-  output$codePanel     <- renderText(DD$code())
+  output$codePanel     <- renderUI({
+    includeHTML(rmarkdown::render(code_to_rmd(DD$code())))
+  })
 
 
   # NOTE: These two option are from function in DDtools that export the design instance and code for specific parameters
@@ -660,7 +665,7 @@ inspector.server <- function(input, output, clientData, session) {
   #   HTML(vightml)
   # })
 
-    }
+}
 
 
 #' @export

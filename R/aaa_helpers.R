@@ -249,6 +249,22 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
 
 }
 
+code_to_rmd <- function(design_code){
+  rmd <- c("---",
+           "output:",
+           "  html_document:",
+           "    highlight: 'pygments'",
+           "---",
+           "```{r, eval=FALSE}",
+           design_code,
+           "```")
+
+  filecon <- "design-code.Rmd"
+  writeLines(rmd, filecon)
+  sapply(filecon, knitr::knit, quiet = TRUE)
+  return(filecon)
+}
+
 get_author <- function(designer){
   rdb_path <- file.path(system.file("help", package= "DesignLibrary"),"DesignLibrary")
   help_text <- tools:::fetchRdDB(rdb_path, designer)
@@ -273,7 +289,7 @@ dd_theme <-
         strip.background = element_blank(),
         legend.position = "bottom",
         text = element_text(family = "Palatino", size=16)
-        )
+      )
   }
 
 

@@ -59,14 +59,20 @@ importUrl <- material_card("Import from URL",
                            actionButton("import_button", "OK")
 )
 
+# diagnostic_params <-       material_card(
+#   "Diagnostic Parameters",
+#   my_tipify(numericInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
+#   my_tipify(numericInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation."),
+#   actionButton("run", "Run Design")
+# )
+
 diagnostic_params <-       material_card(
-  "Diagnostic Parameters",
-  my_tipify(numericInput("d_sims", "Num of Sims:", 10), "The number of simulated populations are created."),
-  my_tipify(numericInput("d_draws", "Num of Draws:", 50) ,"The number of samples drawn from each simulation."),
+  "Diagnostic Plot",
+  my_tipify(numericInput("d_sims", "Num of Sims:", 10), "Diagnosand (y-axis)"),
+  my_tipify(numericInput("d_draws", "Num of Draws:", 50) ,"Main design parameter (x-axis)"),
+  my_tipify(numericInput("d_draws", "Num of Draws:", 50) ,"Add design parameter (optional layer)"),
   actionButton("run", "Run Design")
 )
-
-
 
 #' @import shinymaterial
 #' @import shinyBS
@@ -100,7 +106,7 @@ inspector.ui <- material_page(
     material_column(
       width = 4,
       uiOutput("designParameters"),
-      uiOutput("diagnosticParameters")
+      uiOutput("plotParameters")
     ),
     material_column(
       width = 8,
@@ -111,7 +117,8 @@ inspector.ui <- material_page(
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-                               bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),                               bsCollapsePanel("Power", uiOutput("powerPanel")),
+                               bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
+                               bsCollapsePanel("Diagnostic Plot", uiOutput("diagnosticPlot")),
                                bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                                                downloadButton("download_code", "Export Code...")),
                                bsCollapsePanel("Simulated Data", dataTableOutput("simulationPanel")),
@@ -120,7 +127,6 @@ inspector.ui <- material_page(
                                                # p("This software is in alpha release. Please contact the authors before using in experiments or published work."),
                                                p("  This project is generously supported by a grant from the Laura and John Arnold Foundation and seed funding from EGAP.")
                                )
-                    #
                     )
       )
     )
@@ -210,6 +216,49 @@ inspector.server <- function(input, output, clientData, session) {
     do.call(material_card, c(title="Design Parameters", boxes))
 
 })
+
+  output$plotParameters <- renderUI({
+    design_fn <- req(DD$design)
+    v <- get_shiny_arguments(design_fn)
+    f <- names(v)
+    boxes <- list()
+
+    design_i <- req(DD$design_instance())
+    estimators <- unique(paste0(get_estimates(design_i)$estimator_label))
+
+    # diagnosis <- DD$diagnosis_instance()
+    # diagnosand_names <- diagnosis$diagnosand_names
+
+    boxes[[1]] <- selectInput("estimator", "Estimator (coefficient)", choices = estimators)
+    boxes[[2]] <- uiOutput("coefficient")
+    boxes[[3]] <- selectInput("diag_param", "Diagnosand (y-axis)", choices = c("bias", "rmse", "power", "coverage", "mean_se", "type_s_rate", "mean_estimand"))#, diagnosand_names, selected = diagnosand_names[1])
+    boxes[[4]] <- selectInput("x_param", "Main parameter (x-axis)",
+                              choices = f)
+    boxes[[5]] <- selectInput("opt_param", "Add layering parameter (optional)",
+                              choices = c("(none)", f))
+
+    tips <- c("Design Estimator",
+              "Coefficient",
+              "Diagnosand (vertical axis)",
+              "Parameter to be placed for the horizontal axis",
+              "Parameter used for separate curves")
+
+    for(i in 1:length(boxes)){
+      boxes[[i]] <- my_tipify(boxes[[i]], tips[i])
+    }
+
+    do.call(material_card, c(title="Plot Parameters", boxes))
+
+  })
+
+  observe(updateSelectInput(session, "opt_param",
+                            choices = c("(none)", dplyr::setdiff(names(get_shiny_arguments(DD$design)), input$x_param))))
+
+  output$coefficient <- renderUI({
+    design_i <- req(DD$design_instance())
+    coefficients <- get_estimates(design_i)$coefficient[get_estimates(design_i)$estimator_label == input$estimator]
+    selectInput("coefficient", "Coefficient", choices = coefficients)
+  })
 
   #REVIEW
   output$welcome <- renderUI({
@@ -520,12 +569,11 @@ inspector.server <- function(input, output, clientData, session) {
     print(g)
   })
 
-  output$powerPanel <- renderUI({
-    if(input$import_library_dropdown %in% "randomized_response") return()
-    else plotOutput("powerPlot")
+  output$diagnosticPlot <- renderUI({
+    plotOutput("user_defined_plot")
   })
 
-  output$powerPlot <- renderPlot({
+  output$user_defined_plot <- renderPlot({
 
     # browser()
     # N_formal <- eval(formals(DD$design)$N)
@@ -533,25 +581,26 @@ inspector.server <- function(input, output, clientData, session) {
 
     args <- DD$shiny_args
 
-    powerdf <- NULL
+    plotdf <- NULL
 
     # browser()
     if(DD$precomputed){
-      powerdf <- get_diagnosands(DD$diagnosis)
-      if(input$import_library_dropdown %in% "block_cluster_two_arm"){
-        powerdf$N <- with(powerdf, N_blocks*N_clusters_in_block*N_i_in_cluster)
-      }
-
-      if(input$import_library_dropdown %in% "cluster_sampling"){
-        powerdf$N <- with(powerdf, n_clusters*n_subjects_per_cluster)
-      }
+      plotdf <- get_diagnosands(DD$diagnosis)
 
       #restrict to cases where all other parameters match input
-      N_args <- c("N", "N_blocks", "N_clusters_in_block", "N_i_in_cluster", "n_clusters", "n_subjects_per_cluster")
-      fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% N_args]
+      fix_arg <- names(get_shiny_arguments(DD$design))[!names(get_shiny_arguments(DD$design)) %in% c(input$x_param, input$opt_param)]
+
       for(col in fix_arg){
-        powerdf <- powerdf[powerdf[[col]]==input[[paste0("d_",col)]],]
+        plotdf <- plotdf[plotdf[[col]]==input[[paste0("d_",col)]],]
       }
+
+      #further restrict to estimator chosen
+      estimator <- input$estimator #trimws(gsub(".*?[)]$", "", input$estimator), which = "both")
+      coefficient <- input$coefficient #regmatches(input$estimator, gregexpr("(?<=\\().*?(?=\\))", input$estimator, perl=T))[[1]][1]
+
+      plotdf <- plotdf[plotdf$estimator_label == estimator &
+                         plotdf$coefficient == coefficient,]
+
     }else{
       for(N in N_formal){
         args$N <- N
@@ -559,33 +608,39 @@ inspector.server <- function(input, output, clientData, session) {
         if(is.null(d)) next;
         diag <- get_diagnosands(diagnoser(d))
         diag$N <- N
-        powerdf <- rbind.data.frame(powerdf, diag, stringsAsFactors = FALSE)
+        plotdf <- rbind.data.frame(plotdf, diag, stringsAsFactors = FALSE)
       }
     }
 
-    powerdf$estimator_label <- paste("Power of", powerdf$estimator_label)
+    # plotdf$estimator_label <- paste("Power of", plotdf$estimator_label)
 
     if(input$import_library_dropdown %in% "mediation_analysis"){
-      powerdf$estimator_label <- paste0(powerdf$estimator_label, " (", powerdf$coefficient, ")")
+      plotdf$estimator_label <- paste0(plotdf$estimator_label, " (", plotdf$coefficient, ")")
     }
 
-    p <- ggplot(powerdf) +
-      aes(x=N, y=power, ymin=power-2*`se(power)`, ymax=power+2*`se(power)`,
-          group=estimator_label, color=estimator_label, fill=estimator_label) +
+    plotdf$diagnosand <- plotdf[[input$diag_param]]
+    plotdf$diagnosand_min <- plotdf[[input$diag_param]] - 1.96*plotdf[[paste0("se(", input$diag_param, ")")]]
+    plotdf$diagnosand_max <- plotdf[[input$diag_param]] + 1.96*plotdf[[paste0("se(", input$diag_param, ")")]]
+    plotdf$x_param <- plotdf[[input$x_param]]
+    ifelse(input$opt_param != "(none)", plotdf$opt_param <- as.factor(plotdf[[input$opt_param]]), plotdf$opt_param <- NA)
+
+    if(input$opt_param != "(none)"){
+      p <- ggplot(plotdf) +
+        aes(x=x_param, y=diagnosand, ymin=diagnosand_min, ymax=diagnosand_max,
+            group=opt_param, color=opt_param, fill=opt_param)
+
+    }else{
+      p <- ggplot(plotdf) +
+        aes(x=x_param, y=diagnosand, ymin=diagnosand_min, ymax=diagnosand_max)
+    }
+
+    p <- p +
       geom_line() +
       geom_point() +
       geom_ribbon(alpha=.3) +
-      scale_y_continuous(name="Power of Design", limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-      dd_theme() +  labs(fill="",color="")
-
-
-    if(input$import_library_dropdown %in% "block_cluster_two_arm"){
-      p <- p + facet_grid(N_blocks ~ N_clusters_in_block, labeller = labeller(.rows = label_both, .cols = label_both))
-    }
-
-    if(input$import_library_dropdown %in% "cluster_sampling"){
-      p <- p + facet_grid(n_clusters ~ ., labeller=label_bquote("clusters"==.(n_clusters)))
-    }
+      scale_color_discrete() +
+      scale_y_continuous(name=input$diag_param) + #, limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
+      dd_theme() +  labs(fill="",color="", x = input$x_param)
 
     p
 

@@ -255,9 +255,14 @@ code_to_rmd <- function(design_code){
            "  html_document:",
            "    highlight: 'pygments'",
            "---",
+           "<style>",
+           "div.blue pre { background-color:white; }",
+           "</style>",
+           "<div class = 'blue'>",
            "```{r, eval=FALSE}",
            design_code,
-           "```")
+           "```",
+           "</div>")
 
   filecon <- "design-code.Rmd"
   writeLines(rmd, filecon)

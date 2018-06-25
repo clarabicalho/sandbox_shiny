@@ -100,7 +100,8 @@ inspector.ui <- material_page(
     material_column(
       width = 4,
       uiOutput("designParameters"),
-      uiOutput("diagnosticParameters")
+      uiOutput("diagnosticParameters"),
+      bookmarkButton()
     ),
     material_column(
       width = 8,
@@ -662,7 +663,7 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 #' @export
-DDinspector <- shinyApp(inspector.ui, inspector.server)
+DDinspector <- shinyApp(inspector.ui, inspector.server, enableBookmarking = "url")
 
 
 

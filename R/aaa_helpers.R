@@ -252,7 +252,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
 code_to_rmd <- function(design_code){
   rmd <- c("---",
            "output:",
-           "  html_document:",
+           "  md_document:",
            "    highlight: 'pygments'",
            "---",
            "```{r, eval=FALSE}",

@@ -324,6 +324,13 @@ inspector.server <- function(input, output, clientData, session) {
     DD$args_code <- diagnosis$argument_list
   }, ignoreNULL=TRUE)
 
+  observeEvent(input$import_library_dropdown, {
+    query <- parseQueryString(session$clientData$url_search)
+    if (!is.null(query[['import_library_dropdown']])) {
+      updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
+    }
+  })
+
   #restrict to diagnosis for the parameters set in shiny `input`
   DD$shiny_args <- reactive({
     args <- list()#formals(DD$design)[-length(formals(DD$design))]

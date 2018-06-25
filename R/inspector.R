@@ -605,7 +605,8 @@ inspector.server <- function(input, output, clientData, session) {
 
   DD$code <- reactive({
     if(!is.null(attr(DD$design_instance(), "code"))){
-      attr(DD$design_instance(), "code")
+      code <- attr(DD$design_instance(), "code")
+      code
       # paste(code, collapse = "\n")
     }
     # } else if(requireNamespace("pryr")){
@@ -630,7 +631,7 @@ inspector.server <- function(input, output, clientData, session) {
   })
 
   output$codePanel     <- renderUI({
-    includeMarkdown(rmarkdown::render(code_to_rmd(DD$code())))
+    includeHTML(rmarkdown::render(code_to_rmd(DD$code())))
   })
 
 

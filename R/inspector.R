@@ -523,8 +523,8 @@ inspector.server <- function(input, output, clientData, session) {
   })
 
   output$powerPanel <- renderUI({
-    if(!DD$precomputed) return()
-    plotOutput("powerPlot")
+    if(input$import_library_dropdown %in% "randomized_response") return()
+    else plotOutput("powerPlot")
   })
 
   output$powerPlot <- renderPlot({

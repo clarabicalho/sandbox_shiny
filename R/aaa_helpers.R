@@ -250,7 +250,7 @@ pretty_summary_step <- function(i, variables_added, variables_modified, quantiti
 }
 
 code_to_rmd <- function(design_code){
-  md <- c("---",
+  rmd <- c("---",
            "output:",
            "  html_document:",
            "    highlight: 'pygments'",
@@ -259,8 +259,8 @@ code_to_rmd <- function(design_code){
            design_code,
            "```")
 
-  filecon <- "design-code.md"
-  writeLines(md, filecon)
+  filecon <- "design-code.Rmd"
+  writeLines(rmd, filecon)
   sapply(filecon, knitr::knit, quiet = TRUE)
   return(filecon)
 }

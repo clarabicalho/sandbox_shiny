@@ -219,9 +219,9 @@ inspector.server <- function(input, output, clientData, session) {
       if (paste0(query[['designer']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
           # updateTextInput(session, "import_library_dropdown", value = query[['designer']])
           e <- as.environment("package:DesignLibrary")
-          DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
+          DD$design <- get(paste0(query[['designer']], "_designer"), e)
           DD$precomputed <- TRUE
-          diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+          diagnosis <- readRDS(paste0("data/", query[['designer']], "_shiny_diagnosis.RDS"))
           DD$diagnosis <- diagnosis$diagnosis
           DD$args_code <- diagnosis$argument_list
           session$sendCustomMessage(type = "closeModal", "#welcome_modal")

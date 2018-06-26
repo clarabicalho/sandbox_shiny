@@ -81,7 +81,7 @@ inspector.ui <- material_page(
             $(name).modal("close");
           });
     '),
-  shiny::tags$title("Declare Design Inspector"),
+  shiny::tags$title("DeclareDesign Inspector"),
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
@@ -214,10 +214,18 @@ inspector.server <- function(input, output, clientData, session) {
   #REVIEW
   output$welcome <- renderUI({
     query <- parseQueryString(session$clientData$url_search)
-    if("file" %in% names(query)){
-      fname <- query[["file"]]
-      if(file.exists(fname)){
-        DD$design <- readRDS(fname)
+    if("designer" %in% names(query)){
+      fname <- query[["designer"]]
+      if (paste0(query[['designer']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+          # updateTextInput(session, "import_library_dropdown", value = query[['designer']])
+          e <- as.environment("package:DesignLibrary")
+          DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
+          DD$precomputed <- TRUE
+          diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+          DD$diagnosis <- diagnosis$diagnosis
+          DD$args_code <- diagnosis$argument_list
+          session$sendCustomMessage(type = "closeModal", "#welcome_modal")
+
         message("loaded sidefile")
         return(shiny::tags$script("
                                   console.log('sidefile loaded')
@@ -225,25 +233,24 @@ inspector.server <- function(input, output, clientData, session) {
                                   "))
 
       }
-
-
-    }
-
-    if("topic" %in% names(query)){
-      # fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
-      fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
-      if(file.exists(fname)) {
-        load(fname, envir = .GlobalEnv)
-        DD$precomputed <- TRUE
-        DD$design <- designer
-        message("loaded topic")
-        return(shiny::tags$script("
-                                  console.log('topic loaded')
-                                  Shiny.onInputChange('import_button', 99999)
-                                  "))
       }
 
-      }
+
+    # if("topic" %in% names(query)){
+    #   # fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
+    #   fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
+    #   if(file.exists(fname)) {
+    #     load(fname, envir = .GlobalEnv)
+    #     DD$precomputed <- TRUE
+    #     DD$design <- designer
+    #     message("loaded topic")
+    #     return(shiny::tags$script("
+    #                               console.log('topic loaded')
+    #                               Shiny.onInputChange('import_button', 99999)
+    #                               "))
+    #   }
+    #
+    #   }
 
     welcome
     })
@@ -324,15 +331,20 @@ inspector.server <- function(input, output, clientData, session) {
     DD$args_code <- diagnosis$argument_list
   }, ignoreNULL=TRUE)
 
-  observeEvent(input$import_library_dropdown, {
-    query <- parseQueryString(session$clientData$url_search)
-    if (!is.null(query[['import_library_dropdown']])) {
-      updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
-      return(shiny::tags$script("Shiny.onInputChange('import_button', 99999)
-                                "))
-      session$sendCustomMessage(type = "closeModal", "#welcome_modal")
-    }
-  })
+  # observe({
+  #   query <- parseQueryString(session$clientData$url_search)
+  #   if (!is.null(query[['designer']])){
+  #     if (paste0(query[['designer']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+  #     # updateTextInput(session, "import_library_dropdown", value = query[['designer']])
+  #       e <- as.environment("package:DesignLibrary")
+  #       DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
+  #       DD$precomputed <- TRUE
+  #       diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+  #       DD$diagnosis <- diagnosis$diagnosis
+  #       DD$args_code <- diagnosis$argument_list
+  #       session$sendCustomMessage(type = "closeModal", "#welcome_modal")
+  #   }}
+  # })
 
   #restrict to diagnosis for the parameters set in shiny `input`
   DD$shiny_args <- reactive({

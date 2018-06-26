@@ -328,6 +328,9 @@ inspector.server <- function(input, output, clientData, session) {
     query <- parseQueryString(session$clientData$url_search)
     if (!is.null(query[['import_library_dropdown']])) {
       updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
+      return(shiny::tags$script("Shiny.onInputChange('import_button', 99999)
+                                "))
+      session$sendCustomMessage(type = "closeModal", "#welcome_modal")
     }
   })
 

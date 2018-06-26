@@ -214,14 +214,14 @@ inspector.server <- function(input, output, clientData, session) {
   #REVIEW
   output$welcome <- renderUI({
     query <- parseQueryString(session$clientData$url_search)
-    if("designer" %in% names(query)){
-      fname <- query[["designer"]]
-      if (paste0(query[['designer']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
-          # updateTextInput(session, "import_library_dropdown", value = query[['designer']])
+    if("import_library_dropdown" %in% names(query)){
+      fname <- query[["import_library_dropdown"]]
+      if (paste0(query[['import_library_dropdown']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+          updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
           e <- as.environment("package:DesignLibrary")
-          DD$design <- get(paste0(query[['designer']], "_designer"), e)
+          DD$design <- get(paste0(query[['import_library_dropdown']], "_designer"), e)
           DD$precomputed <- TRUE
-          diagnosis <- readRDS(paste0("data/", query[['designer']], "_shiny_diagnosis.RDS"))
+          diagnosis <- readRDS(paste0("data/", query[['import_library_dropdown']], "_shiny_diagnosis.RDS"))
           DD$diagnosis <- diagnosis$diagnosis
           DD$args_code <- diagnosis$argument_list
           session$sendCustomMessage(type = "closeModal", "#welcome_modal")

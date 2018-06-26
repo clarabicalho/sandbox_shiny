@@ -215,7 +215,6 @@ inspector.server <- function(input, output, clientData, session) {
   output$welcome <- renderUI({
     query <- parseQueryString(session$clientData$url_search)
     if("import_library_dropdown" %in% names(query)){
-      fname <- query[["import_library_dropdown"]]
       if (paste0(query[['import_library_dropdown']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
           updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
           e <- as.environment("package:DesignLibrary")
@@ -232,7 +231,11 @@ inspector.server <- function(input, output, clientData, session) {
                                   Shiny.onInputChange('import_button', 99999)
                                   "))
 
-      }
+      }else{
+        welcome
+        }
+    }else{
+        welcome
       }
 
 
@@ -251,8 +254,6 @@ inspector.server <- function(input, output, clientData, session) {
     #   }
     #
     #   }
-
-    welcome
     })
 
 

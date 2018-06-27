@@ -104,12 +104,12 @@ inspector.ui <- material_page(
   uiOutput("welcome"),
   material_row(
     material_column(
-      width = 4,
-      uiOutput("designParameters"),
-      uiOutput("plotParameters")
+      width = 3,
+      uiOutput("designParameters")#,
+      # uiOutput("plotParameters")
     ),
     material_column(
-      width = 8,
+      width = 6,
       # offset=6,
       material_card("Output",
                     uiOutput("descriptionPanel"),
@@ -129,9 +129,13 @@ inspector.ui <- material_page(
                                )
                     )
       )
+    ),
+    material_column(
+      width = 3,
+      uiOutput("plotParameters")
+      )
     )
   )
-)
 
 
 inspector.server <- function(input, output, clientData, session) {

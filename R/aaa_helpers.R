@@ -5,7 +5,7 @@
 #' @return Diagnosis
 #' @export
 #'
-get_or_run_diagnosis <- function(design,sims,bootstrap) {
+get_or_run_diagnosis <- function(design,sims,bootstrap_sims) {
   design_name <- substitute(design)
   file_name <- paste0(design_name,"_diagnosis.RDS")
   if(file.exists(file_name)){

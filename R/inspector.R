@@ -113,6 +113,7 @@ inspector.ui <- material_page(
       # offset=6,
       material_card("Output",
                     uiOutput("descriptionPanel"),
+                    uiOutput("citationPanel"),
                     # verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
@@ -669,10 +670,11 @@ inspector.server <- function(input, output, clientData, session) {
       }
   })
 
-  output$descriptionPanel <- renderUI(HTML(paste(attr(DD$design, "description"), "Author: DeclareDesign Team", collapse = "\n")))
+  output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
 
   output$citationPanel <- renderUI(
-    HTML(format(get_author(paste0(input$import_library_dropdown, "_designer")), style="html"))
+    # HTML(format(get_author(paste0(input$import_library_dropdown, "_designer")), style="html"))
+    HTML("Author: DeclareDesign Team")
   )
 
   output$summaryPanel  <- renderUI({

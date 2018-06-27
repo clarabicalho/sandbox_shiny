@@ -642,9 +642,9 @@ inspector.server <- function(input, output, clientData, session) {
       geom_line() +
       geom_point() +
       geom_ribbon(alpha=.3) +
-      scale_color_discrete() +
+      # scale_color_discrete() +
       scale_y_continuous(name=input$diag_param) + #, limits=0:1, breaks=0:4/4, minor_breaks = 0:10/10) +
-      dd_theme() +  labs(fill="",color="", x = input$x_param)
+      dd_theme() +  labs(fill=input$opt_param,color=input$opt_param, x = input$x_param)
 
     p
 

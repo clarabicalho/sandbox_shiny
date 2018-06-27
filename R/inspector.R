@@ -114,6 +114,7 @@ inspector.ui <- material_page(
       material_card("Output",
                     uiOutput("descriptionPanel"),
                     uiOutput("citationPanel"),
+                    p("Note: The reults of the design diagnosis are obtained from 500 simulations of the design and 100 bootstrap simulations for the diagnosand estimation."),
                     # verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),

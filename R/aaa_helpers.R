@@ -11,7 +11,7 @@ get_or_run_diagnosis <- function(design,sims,bootstrap) {
   if(file.exists(file_name)){
     diagnosis <- readRDS(file = file_name)
   } else {
-    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap = bootstrap)
+    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap_sims = bootstrap_sims)
     saveRDS(diagnosis, file_name)
   }
   diagnosis

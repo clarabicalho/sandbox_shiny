@@ -5,13 +5,13 @@
 #' @return Diagnosis
 #' @export
 #'
-get_or_run_diagnosis <- function(design,sims,bootstrap) {
+get_or_run_diagnosis <- function(design,sims,bootstrap_sims) {
   design_name <- substitute(design)
   file_name <- paste0(design_name,"_diagnosis.RDS")
   if(file.exists(file_name)){
     diagnosis <- readRDS(file = file_name)
   } else {
-    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap = bootstrap)
+    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap_sims = bootstrap_sims)
     saveRDS(diagnosis, file_name)
   }
   diagnosis
@@ -58,17 +58,17 @@ expand_designer_shiny_args_text <- function(designer) {
 
 #' @export
 #'
-get_shiny_diagnosis <- function(designer,sims,bootstrap) {
+get_shiny_diagnosis <- function(designer,sims,bootstrap_sims) {
   shiny_args <- get_shiny_arguments(designer)
-  all_designs <- expand_design(template = designer,expand = TRUE,shiny_args)
-  diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap = bootstrap)
+  all_designs <- expand_design(designer = designer, expand = TRUE, shiny_args)
+  diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap_sims = bootstrap_sims)
   argument_list <- expand_designer_shiny_args_text(designer = designer)
   return(list(diagnosis = diagnosis, argument_list = argument_list))
 }
 
 #' @export
 #'
-get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootstrap,update_existing=FALSE) {
+get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootstrap_sims,update_existing=FALSE) {
   if(is.null(designer_name)) designer_name <- substitute(designer)
   design_name <- gsub(pattern = "_designer",replacement = "",x = designer_name)
   file_name <- paste0("data/",design_name,"_shiny_diagnosis.RDS")
@@ -77,7 +77,7 @@ get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootst
     diagnosis_list <- readRDS(file = file_name)
     diagnosis <- diagnosis_list$diagnosis
   } else {
-    diagnosis_list <- get_shiny_diagnosis(designer,sims = sims,bootstrap=bootstrap)
+    diagnosis_list <- get_shiny_diagnosis(designer,sims = sims,bootstrap_sims=bootstrap_sims)
     diagnosis <- diagnosis_list$diagnosis
     rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_ID))
     parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]

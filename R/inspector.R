@@ -121,7 +121,7 @@ inspector.ui <- material_page(
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
                                bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
                                bsCollapsePanel("Diagnostic Plot", uiOutput("diagnosticPlot")),
-                               bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
+                               bsCollapsePanel("Code", uiOutput("codePanel"),
                                                downloadButton("download_code", "Export Code...")),
                                bsCollapsePanel("Simulated Data", dataTableOutput("simulationPanel")),
                                bsCollapsePanel("About DeclareDesign Inspector", value="About",

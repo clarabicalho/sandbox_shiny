@@ -262,7 +262,8 @@ code_to_rmd <- function(design_code){
   filecon <- "design-code.Rmd"
   writeLines(rmd, filecon)
   sapply(filecon, knitr::knit, quiet = TRUE)
-  return(filecon)
+  rmarkdown::render(filecon)
+  # return(filecon)
 }
 
 get_author <- function(designer){

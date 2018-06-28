@@ -691,7 +691,7 @@ inspector.server <- function(input, output, clientData, session) {
   })
 
   output$codePanel     <- renderUI({
-    includeHTML(code_to_rmd(DD$code()))
+    includeHTML(rmarkdown::render(code_to_rmd(DD$code())))
   })
 
 

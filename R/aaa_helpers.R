@@ -60,7 +60,7 @@ expand_designer_shiny_args_text <- function(designer) {
 #'
 get_shiny_diagnosis <- function(designer,sims,bootstrap_sims) {
   shiny_args <- get_shiny_arguments(designer)
-  all_designs <- expand_design(designer = designer, expand = TRUE, shiny_args)
+  all_designs <- rlang::eval_tidy(rlang::quo(expand_design(designer = designer, expand = TRUE, !!!shiny_args)))
   diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap_sims = bootstrap_sims)
   argument_list <- expand_designer_shiny_args_text(designer = designer)
   return(list(diagnosis = diagnosis, argument_list = argument_list))
@@ -79,7 +79,7 @@ get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootst
   } else {
     diagnosis_list <- get_shiny_diagnosis(designer,sims = sims,bootstrap_sims=bootstrap_sims)
     diagnosis <- diagnosis_list$diagnosis
-    rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_ID))
+    rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_label))
     parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
     diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
     diagnosis_list$diagnosis <- diagnosis
@@ -273,7 +273,7 @@ dd_theme <-
         strip.background = element_blank(),
         legend.position = "bottom",
         text = element_text(family = "Palatino", size=16)
-        )
+      )
   }
 
 

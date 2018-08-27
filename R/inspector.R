@@ -6,11 +6,11 @@
 ####
 
 library(DesignLibrary)
-# library(shiny)
-# library(shinymaterial)
-# library(shinythemes)
-# library(shinyBS)
-# library(ggplot2)
+library(shiny)
+library(shinymaterial)
+library(shinythemes)
+library(shinyBS)
+library(ggplot2)
 
 source("R/aaa_helpers.R")
 
@@ -235,7 +235,7 @@ inspector.server <- function(input, output, clientData, session) {
     # diagnosis <- DD$diagnosis_instance()
     # diagnosand_names <- diagnosis$diagnosand_names
 
-    boxes[[1]] <- selectInput("estimator", "Estimator (coefficient)", choices = estimators)
+    boxes[[1]] <- selectInput("estimator", "Estimator Label", choices = estimators)
     boxes[[2]] <- uiOutput("coefficient")
     boxes[[3]] <- selectInput("diag_param", "Diagnosand (y-axis)", choices = c("bias", "rmse", "power", "coverage", "mean_se", "type_s_rate", "mean_estimand"))#, diagnosand_names, selected = diagnosand_names[1])
     boxes[[4]] <- selectInput("x_param", "Main parameter (x-axis)",
@@ -262,7 +262,7 @@ inspector.server <- function(input, output, clientData, session) {
 
   output$coefficient <- renderUI({
     design_i <- req(DD$design_instance())
-    coefficients <- get_estimates(design_i)$coefficient[get_estimates(design_i)$estimator_label == input$estimator]
+    coefficients <- get_estimates(design_i)$term[get_estimates(design_i)$estimator_label == input$estimator]
     selectInput("coefficient", "Coefficient", choices = coefficients)
   })
 
@@ -402,7 +402,7 @@ inspector.server <- function(input, output, clientData, session) {
       t <- c()
       for(n in shiny_args){
         v <- which(DD$diagnosis$diagnosands[[n]] == as.numeric(input[[paste0("d_", n)]]))
-        v <- DD$diagnosis$diagnosands$design_ID[v]
+        v <- DD$diagnosis$diagnosands$design_label[v]
         t <- c(t, v)
       }
       Mode(t)
@@ -411,15 +411,17 @@ inspector.server <- function(input, output, clientData, session) {
 
   diagnosis_instance <- reactive({
     diag <- lapply(DD$diagnosis, function(o){
-      o[o$design_ID == design_id(),]
+      if(is.data.frame(o)){
+      o <- o[o$design_label == paste0("design_", design_id()),]
+      }
+      o
     })
     if(DD$precomputed) diag$diagnosands <- diag$diagnosands[,!names(diag$diagnosands) %in% names(get_shiny_arguments(DD$design))]
     return(diag)
   })
 
-
   args_code <- reactive({
-    DD$args_code[[design_id()]]
+    DD$args_code[[as.numeric(gsub("design_", "", design_id()))]]
   })
 
   # message("instantiating design...\n")
@@ -493,7 +495,7 @@ inspector.server <- function(input, output, clientData, session) {
     # message(Sys.time(), "a")
     diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
     if(DD$precomputed){
-      diag_tab <- dplyr::select(diag_tab, -design_ID)
+      diag_tab <- dplyr::select(diag_tab, -design_label)
     }
     # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
@@ -530,32 +532,32 @@ inspector.server <- function(input, output, clientData, session) {
     # message(Sys.time(), "a")
 
     sims <- get_simulations(diagnosis_instance())
-    if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
+    if("design_label" %in% names(sims)) sims <- subset(sims, design_label != "original_design")
 
     # observeEvent(input$import_library) sims <- subset(sims, design_ID != "original_design")
     # if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
-    sims$covered <- factor(1 + (sims$ci_lower < sims$estimand & sims$estimand < sims$ci_upper), 1:2,
+    sims$covered <- factor(1 + (sims$conf.low < sims$estimand & sims$estimand < sims$conf.high), 1:2,
                            labels = c("Estimand not covered by confidence interval", "Estimand covered by confidence interval"))
     sims$estimator_label <- as.factor(sims$estimator_label)
     sims$estimand_label <- as.factor(sims$estimand_label)
 
     # message(Sys.time(), "b")
 
-    # lowest <- min(sims$est)
-    # highest <- max(sims$est)
+    # lowest <- min(sims$estimate)
+    # highest <- max(sims$estimate)
     # browser()
     # on.exit(message(Sys.time(), "exit"))
 
-    g <- ggplot(sims) + aes(x=est) +
-      # geom_density(aes(x=est, y=  (..count.. - min(..count..))/ (max(..count..) - min(..count..)) *   min(x),
+    g <- ggplot(sims) + aes(x=estimate) +
+      # geom_density(aes(x=estimate, y=  (..count.. - min(..count..))/ (max(..count..) - min(..count..)) *   min(x),
       #                  fill=covered, group=covered), alpha=.4, position='stack', color=NA) +
-      geom_errorbar(aes(ymin=ci_lower, ymax=ci_upper, color=covered), alpha=.4) +
-      # geom_point(aes(y=est), size=.5) +
+      geom_errorbar(aes(ymin=conf.low, ymax=conf.high, color=covered), alpha=.4) +
+      # geom_point(aes(y=estimate), size=.5) +
       # geom_point(aes(y=estimand, col=black), alpha=.8) +
       geom_hline(aes(yintercept=mean(estimand))) +
       geom_text(aes(x=x, y=y, label=label),
                 data=function(df){
-                  data.frame(x=min(df$est),
+                  data.frame(x=min(df$estimate),
                              y=mean(df$estimand),
                              label=sprintf('  Avg Estimand:\n  %4.3f', mean(df$estimand)),
                              stringsAsFactors = FALSE)
@@ -605,7 +607,7 @@ inspector.server <- function(input, output, clientData, session) {
       coefficient <- input$coefficient #regmatches(input$estimator, gregexpr("(?<=\\().*?(?=\\))", input$estimator, perl=T))[[1]][1]
 
       plotdf <- plotdf[plotdf$estimator_label == estimator &
-                         plotdf$coefficient == coefficient,]
+                         plotdf$term == coefficient,]
 
     }else{
       for(N in N_formal){

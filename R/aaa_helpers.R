@@ -60,7 +60,7 @@ expand_designer_shiny_args_text <- function(designer) {
 #'
 get_shiny_diagnosis <- function(designer,sims,bootstrap_sims) {
   shiny_args <- get_shiny_arguments(designer)
-  all_designs <- rlang::eval_tidy(rlang::quo(expand_design(designer = designer, expand = TRUE, !!!shiny_args)))
+  all_designs <- rlang::eval_bare(rlang::expr(expand_design(designer = designer, expand = TRUE, !!!shiny_args)))
   diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap_sims = bootstrap_sims)
   argument_list <- expand_designer_shiny_args_text(designer = designer)
   return(list(diagnosis = diagnosis, argument_list = argument_list))
@@ -95,13 +95,13 @@ nav_bar_color = " light-blue darken-3"
 ### actual helpers
 
 pretty_diagnoses <- function(df, digits=3){
-  ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
+  ret <- df[intersect(c('design_label', 'estimand_label', 'estimator_label', 'term'), names(df))]
   names(ret) <- str_replace(str_to_title(names(ret)), "_.*", "")
 
   ids <- names(ret)
 
   data_columns <- names(df)
-  data_columns <- data_columns[grep('^se[(]|_label$|_ID$|coefficient$', data_columns, invert = TRUE)]
+  data_columns <- data_columns[grep('^se[(]|_label$|term$', data_columns, invert = TRUE)]
 
   myfmt <- sprintf('%%.%if', digits)
 

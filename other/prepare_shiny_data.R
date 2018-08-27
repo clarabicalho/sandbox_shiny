@@ -23,6 +23,7 @@ for(designer in designers){
       update_existing = TRUE
     )
   }
+  print(designer)
 }
 
 

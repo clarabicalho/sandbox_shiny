@@ -265,7 +265,10 @@ inspector.server <- function(input, output, clientData, session) {
 
   output$coefficient <- renderUI({
     design_i <- req(DD$design_instance())
-    coefficients <- get_estimates(design_i)$term[get_estimates(design_i)$estimator_label == input$estimator]
+    estimates <- get_estimates(design_i)
+    if("term" %in% estimates) coefficients <- estimates$term[estimates$estimator_label == input$estimator]
+    # coefficients <- get_estimates(design_i)$term[get_estimates(design_i)$estimator_label == input$estimator]
+    else coefficients <- ""
     selectInput("coefficient", "Coefficient", choices = coefficients)
   })
 
@@ -450,8 +453,8 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-  output$print <- renderText(capture.output(str(get_diagnosands(DD$diagnosis)
-)))
+  output$print <- renderText(capture.output( input$coefficient ))
+
 
   # observeEvent({
   #   input$run;
@@ -615,8 +618,13 @@ inspector.server <- function(input, output, clientData, session) {
       estimator <- input$estimator #trimws(gsub(".*?[)]$", "", input$estimator), which = "both")
       coefficient <- input$coefficient #regmatches(input$estimator, gregexpr("(?<=\\().*?(?=\\))", input$estimator, perl=T))[[1]][1]
 
-      plotdf <- plotdf[plotdf$estimator_label == estimator &
-                         plotdf$term == coefficient,]
+      if(input$coefficient!=""){
+        plotdf <- plotdf[plotdf$estimator_label == estimator &
+                           plotdf$term == coefficient,]
+      }else{
+        plotdf <- plotdf[plotdf$estimator_label == estimator,]
+      }
+
 
     }
     # else{
@@ -671,7 +679,7 @@ inspector.server <- function(input, output, clientData, session) {
     # rownames(diag_tab) <- diag_tab$estimand_label
     sims_tab <- round_df(sims_tab, 4)
     sims_tab
-  }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE))
+  }, options = list(searching = FALSE, ordering = FALSE, paging = TRUE, pageLength=10, info = FALSE, lengthChange= FALSE, scrollX = TRUE))
 
   DD$code <- reactive({
     if(!is.null(attr(DD$design_instance(), "code"))){

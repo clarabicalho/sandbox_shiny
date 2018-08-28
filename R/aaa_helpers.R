@@ -62,8 +62,8 @@ get_shiny_diagnosis <- function(designer,sims,bootstrap_sims) {
   shiny_args <- get_shiny_arguments(designer)
   all_designs <- rlang::eval_bare(rlang::expr(expand_design(designer = designer, expand = TRUE, !!!shiny_args)))
   diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap_sims = bootstrap_sims)
-  argument_list <- expand_designer_shiny_args_text(designer = designer)
-  return(list(diagnosis = diagnosis, argument_list = argument_list))
+  # argument_list <- expand_designer_shiny_args_text(designer = designer)
+  return(diagnosis)
 }
 
 #' @export
@@ -74,16 +74,16 @@ get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootst
   file_name <- paste0("data/",design_name,"_shiny_diagnosis.RDS")
   parameters <- expand.grid(get_shiny_arguments(designer), stringsAsFactors = FALSE)
   if(update_existing==FALSE & file.exists(file_name)){
-    diagnosis_list <- readRDS(file = file_name)
-    diagnosis <- diagnosis_list$diagnosis
+    diagnosis <- readRDS(file = file_name)
+    # diagnosis <- diagnosis_list
   } else {
-    diagnosis_list <- get_shiny_diagnosis(designer,sims = sims,bootstrap_sims=bootstrap_sims)
-    diagnosis <- diagnosis_list$diagnosis
-    rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_label))
-    parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
-    diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
-    diagnosis_list$diagnosis <- diagnosis
-    saveRDS(diagnosis_list, file_name)
+    diagnosis <- get_shiny_diagnosis(designer,sims = sims,bootstrap_sims=bootstrap_sims)
+    # diagnosis <- diagnosis_list$diagnosis
+    # rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_label))
+    # parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
+    # diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
+    # diagnosis_list$diagnosis <- diagnosis
+    saveRDS(diagnosis, file_name)
   }
   diagnosis
 }

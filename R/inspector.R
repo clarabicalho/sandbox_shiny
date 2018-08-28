@@ -11,6 +11,7 @@ library(shinymaterial)
 library(shinythemes)
 library(shinyBS)
 library(ggplot2)
+library(rlang)
 
 source("R/aaa_helpers.R")
 
@@ -154,7 +155,9 @@ inspector.server <- function(input, output, clientData, session) {
 
   # create reactive values of DD --------------------------------------------
 
-  DD <-   reactiveValues(design = NULL, design_instance=NULL, diagnosis=NULL, code="",
+  DD <-   reactiveValues(design = NULL,
+                         # design_instance=NULL,
+                         diagnosis=NULL, code="",
                          precomputed=FALSE, observers=list(), design_id = NULL)
 
 
@@ -374,9 +377,10 @@ inspector.server <- function(input, output, clientData, session) {
       DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
     }
     DD$precomputed <- TRUE
-    diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
-    DD$diagnosis <- diagnosis$diagnosis
-    DD$args_code <- diagnosis$argument_list
+    DD$diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+    # DD$diagnosis <- diagnosis
+    # DD$designs <- diagnosis$design
+    # DD$args_code <- diagnosis$argument_list
   }, ignoreNULL=TRUE)
 
   #restrict to diagnosis for the parameters set in shiny `input`
@@ -420,15 +424,19 @@ inspector.server <- function(input, output, clientData, session) {
     return(diag)
   })
 
-  args_code <- reactive({
-    DD$args_code[[as.numeric(gsub("design_", "", design_id()))]]
-  })
+  # args_code <- reactive({
+  #   DD$args_code[[as.numeric(gsub("design_", "", design_id()))]]
+  # })
 
   # message("instantiating design...\n")
   # # if(exists("DEBUG", globalenv())) browser()
 
   DD$design_instance <- reactive({
-    tryCatch(do.call(DD$design, args=DD$shiny_args(), envir = parent.frame()), error=function(e) 9999999)
+    # DD$designs[[design_id()]]
+    # tryCatch(
+    e <- environment()
+    do.call(DD$design, DD$shiny_args(), envir = parent.env(e))
+    # , error=function(e) 9999999)
     # if(identical(DD$design_instance, 9999999)) {
     # DD$diagnosis <- NULL
     #   # return() # bail out
@@ -442,7 +450,8 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-  output$print <- renderText(capture.output(str(DD$design_instance())))
+  output$print <- renderText(capture.output(str(get_diagnosands(DD$diagnosis)
+)))
 
   # observeEvent({
   #   input$run;

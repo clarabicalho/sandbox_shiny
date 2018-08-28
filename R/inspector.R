@@ -114,7 +114,7 @@ inspector.ui <- material_page(
       material_card("Output",
                     uiOutput("descriptionPanel"),
                     uiOutput("citationPanel"),
-                    p("Note: The reults of the design diagnosis are obtained from 500 simulations of the design and 100 bootstrap simulations for the diagnosand estimation."),
+                    p("Note: The results of the design diagnosis are obtained from 500 simulations of the design and 100 bootstrap simulations."),
                     # verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
@@ -237,7 +237,7 @@ inspector.server <- function(input, output, clientData, session) {
 
     boxes[[1]] <- selectInput("estimator", "Estimator Label", choices = estimators)
     boxes[[2]] <- uiOutput("coefficient")
-    boxes[[3]] <- selectInput("diag_param", "Diagnosand (y-axis)", choices = c("bias", "rmse", "power", "coverage", "mean_se", "type_s_rate", "mean_estimand"))#, diagnosand_names, selected = diagnosand_names[1])
+    boxes[[3]] <- selectInput("diag_param", "Diagnosand (y-axis)", choices = diagnosis_instance()$diagnosand_names)#, diagnosand_names, selected = diagnosand_names[1])
     boxes[[4]] <- selectInput("x_param", "Main parameter (x-axis)",
                               choices = f)
     boxes[[5]] <- selectInput("opt_param", "Add layering parameter (optional)",
@@ -428,7 +428,7 @@ inspector.server <- function(input, output, clientData, session) {
   # # if(exists("DEBUG", globalenv())) browser()
 
   DD$design_instance <- reactive({
-    tryCatch(do.call(DD$design, DD$shiny_args()), error=function(e) 9999999)
+    tryCatch(do.call(DD$design, args=DD$shiny_args(), envir = parent.frame()), error=function(e) 9999999)
     # if(identical(DD$design_instance, 9999999)) {
     # DD$diagnosis <- NULL
     #   # return() # bail out

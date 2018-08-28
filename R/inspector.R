@@ -230,7 +230,7 @@ inspector.server <- function(input, output, clientData, session) {
     boxes <- list()
 
     design_i <- req(DD$design_instance())
-    estimators <- unique(paste0(get_estimates(design_i)$estimator_label))
+    estimators <- unique(get_estimates(design_i)$estimator_label)
 
     # diagnosis <- DD$diagnosis_instance()
     # diagnosand_names <- diagnosis$diagnosand_names
@@ -528,54 +528,54 @@ inspector.server <- function(input, output, clientData, session) {
   # })
 
 
-  output$diagnosticsPlot <- renderPlot({
-    # message(Sys.time(), "a")
-
-    sims <- get_simulations(diagnosis_instance())
-    if("design_label" %in% names(sims)) sims <- subset(sims, design_label != "original_design")
-
-    # observeEvent(input$import_library) sims <- subset(sims, design_ID != "original_design")
-    # if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
-    sims$covered <- factor(1 + (sims$conf.low < sims$estimand & sims$estimand < sims$conf.high), 1:2,
-                           labels = c("Estimand not covered by confidence interval", "Estimand covered by confidence interval"))
-    sims$estimator_label <- as.factor(sims$estimator_label)
-    sims$estimand_label <- as.factor(sims$estimand_label)
-
-    # message(Sys.time(), "b")
-
-    # lowest <- min(sims$estimate)
-    # highest <- max(sims$estimate)
-    # browser()
-    # on.exit(message(Sys.time(), "exit"))
-
-    g <- ggplot(sims) + aes(x=estimate) +
-      # geom_density(aes(x=estimate, y=  (..count.. - min(..count..))/ (max(..count..) - min(..count..)) *   min(x),
-      #                  fill=covered, group=covered), alpha=.4, position='stack', color=NA) +
-      geom_errorbar(aes(ymin=conf.low, ymax=conf.high, color=covered), alpha=.4) +
-      # geom_point(aes(y=estimate), size=.5) +
-      # geom_point(aes(y=estimand, col=black), alpha=.8) +
-      geom_hline(aes(yintercept=mean(estimand))) +
-      geom_text(aes(x=x, y=y, label=label),
-                data=function(df){
-                  data.frame(x=min(df$estimate),
-                             y=mean(df$estimand),
-                             label=sprintf('  Avg Estimand:\n  %4.3f', mean(df$estimand)),
-                             stringsAsFactors = FALSE)
-                }, hjust='left') +
-      facet_wrap(estimand_label~estimator_label) + # this is issue
-      ylab("Estimate") +
-      scale_x_continuous(labels=NULL, breaks = NULL, name='') +
-      scale_color_discrete(drop=FALSE, name = '') +
-      # scale_fill_discrete(guide=FALSE)+
-      # coord_fixed() +
-      coord_flip() +
-      dd_theme()
-
-    # message(Sys.time(), "c")
-
-
-    print(g)
-  })
+  # output$diagnosticsPlot <- renderPlot({
+  #   # message(Sys.time(), "a")
+  #
+  #   sims <- get_simulations(diagnosis_instance())
+  #   if("design_label" %in% names(sims)) sims <- subset(sims, design_label != "original_design")
+  #
+  #   # observeEvent(input$import_library) sims <- subset(sims, design_ID != "original_design")
+  #   # if("design_ID" %in% names(sims)) sims <- subset(sims, design_ID != "original_design")
+  #   sims$covered <- factor(1 + (sims$conf.low < sims$estimand & sims$estimand < sims$conf.high), 1:2,
+  #                          labels = c("Estimand not covered by confidence interval", "Estimand covered by confidence interval"))
+  #   sims$estimator_label <- as.factor(sims$estimator_label)
+  #   sims$estimand_label <- as.factor(sims$estimand_label)
+  #
+  #   # message(Sys.time(), "b")
+  #
+  #   # lowest <- min(sims$estimate)
+  #   # highest <- max(sims$estimate)
+  #   # browser()
+  #   # on.exit(message(Sys.time(), "exit"))
+  #
+  #   g <- ggplot(sims) + aes(x=estimate) +
+  #     # geom_density(aes(x=estimate, y=  (..count.. - min(..count..))/ (max(..count..) - min(..count..)) *   min(x),
+  #     #                  fill=covered, group=covered), alpha=.4, position='stack', color=NA) +
+  #     geom_errorbar(aes(ymin=conf.low, ymax=conf.high, color=covered), alpha=.4) +
+  #     # geom_point(aes(y=estimate), size=.5) +
+  #     # geom_point(aes(y=estimand, col=black), alpha=.8) +
+  #     geom_hline(aes(yintercept=mean(estimand))) +
+  #     geom_text(aes(x=x, y=y, label=label),
+  #               data=function(df){
+  #                 data.frame(x=min(df$estimate),
+  #                            y=mean(df$estimand),
+  #                            label=sprintf('  Avg Estimand:\n  %4.3f', mean(df$estimand)),
+  #                            stringsAsFactors = FALSE)
+  #               }, hjust='left') +
+  #     facet_wrap(estimand_label~estimator_label) + # this is issue
+  #     ylab("Estimate") +
+  #     scale_x_continuous(labels=NULL, breaks = NULL, name='') +
+  #     scale_color_discrete(drop=FALSE, name = '') +
+  #     # scale_fill_discrete(guide=FALSE)+
+  #     # coord_fixed() +
+  #     coord_flip() +
+  #     dd_theme()
+  #
+  #   # message(Sys.time(), "c")
+  #
+  #
+  #   print(g)
+  # })
 
   output$diagnosticPlot <- renderUI({
     plotOutput("user_defined_plot")
@@ -585,7 +585,7 @@ inspector.server <- function(input, output, clientData, session) {
 
     # browser()
     # N_formal <- eval(formals(DD$design)$N)
-    N_formal <- get_shiny_arguments(DD$design)$N
+    # N_formal <- get_shiny_arguments(DD$design)$N
 
     args <- DD$shiny_args
 
@@ -609,16 +609,17 @@ inspector.server <- function(input, output, clientData, session) {
       plotdf <- plotdf[plotdf$estimator_label == estimator &
                          plotdf$term == coefficient,]
 
-    }else{
-      for(N in N_formal){
-        args$N <- N
-        d <- tryCatch(do.call(DD$design, args), error=function(e) NULL)
-        if(is.null(d)) next;
-        diag <- get_diagnosands(diagnoser(d))
-        diag$N <- N
-        plotdf <- rbind.data.frame(plotdf, diag, stringsAsFactors = FALSE)
-      }
     }
+    # else{
+    #   for(N in N_formal){
+    #     args$N <- N
+    #     d <- tryCatch(do.call(DD$design, args), error=function(e) NULL)
+    #     if(is.null(d)) next;
+    #     diag <- get_diagnosands(diagnoser(d))
+    #     diag$N <- N
+    #     plotdf <- rbind.data.frame(plotdf, diag, stringsAsFactors = FALSE)
+    #   }
+    # }
 
     # plotdf$estimator_label <- paste("Power of", plotdf$estimator_label)
 
@@ -692,7 +693,7 @@ inspector.server <- function(input, output, clientData, session) {
   output$codePanel     <- renderText(DD$code())
 
 
-  # NOTE: These two option are from function in DDtools that export the design instance and code for specific parameters
+  # NOTE: These two options are from function in DDtools that export the design instance and code for specific parameters
 
   output$download_design <- downloadHandler(
     filename=function() {

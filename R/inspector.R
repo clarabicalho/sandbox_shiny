@@ -106,6 +106,11 @@ inspector.ui <- material_page(
   material_row(
     material_column(
       width = 3,
+      material_card("",
+                    div(style="display:inline-block;width:100%;text-align: center;",actionButton("reset",
+                                                                                                 label = "RESET",
+                                                                                                 onclick = "https://eos.wzb.eu/ipi/DDinspector/",
+                                                                                                 icon = icon("refresh", lib = "glyphicon")))),
       uiOutput("designParameters")#,
       # uiOutput("plotParameters")
     ),

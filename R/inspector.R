@@ -13,7 +13,7 @@ library(shinyBS)
 library(ggplot2)
 library(rlang)
 library(shinyjs)
-library(V8)
+# library(V8)
 
 source("R/aaa_helpers.R")
 
@@ -158,6 +158,7 @@ inspector.server <- function(input, output, clientData, session) {
   library(shinyBS)
   library(stringr)
   library(shinymaterial)
+  library(shinyjs)
 
   # session$allowReconnect("force") #TODO
   observeEvent(input$refresh, {

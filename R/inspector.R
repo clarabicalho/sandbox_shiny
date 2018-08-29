@@ -400,7 +400,7 @@ inspector.server <- function(input, output, clientData, session) {
   #restrict to diagnosis for the parameters set in shiny `input`
   DD$shiny_args <- reactive({
     args <- list()#formals(DD$design)[-length(formals(DD$design))]
-    for(n in intersect(names(formals(DD$design)), sub("d_", "", names(input), ignore.case = FALSE))){
+    for(n in names(get_shiny_arguments(DD$design))){
       args[[n]] <- as.numeric(input[[paste0("d_", n)]])
     }
     args
@@ -464,7 +464,7 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-  output$print <- renderText(capture.output(DD$shiny_args()))
+  output$print <- renderText(capture.output(names(input)))
 
 
   # observeEvent({

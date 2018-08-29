@@ -277,7 +277,7 @@ inspector.server <- function(input, output, clientData, session) {
   output$coefficient <- renderUI({
     design_i <- req(DD$design_instance())
     estimates <- get_estimates(design_i)
-    if("term" %in% estimates) coefficients <- estimates$term[estimates$estimator_label == input$estimator]
+    if("term" %in% names(estimates)) coefficients <- estimates$term[estimates$estimator_label == input$estimator]
     # coefficients <- get_estimates(design_i)$term[get_estimates(design_i)$estimator_label == input$estimator]
     else coefficients <- ""
     selectInput("coefficient", "Coefficient", choices = coefficients)

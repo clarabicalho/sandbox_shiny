@@ -286,15 +286,15 @@ inspector.server <- function(input, output, clientData, session) {
   #REVIEW
   output$welcome <- renderUI({
     query <- parseQueryString(session$clientData$url_search)
-    if("import_library_dropdown" %in% names(query)){
-      if (paste0(query[['import_library_dropdown']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
-          updateTextInput(session, "import_library_dropdown", value = query[['import_library_dropdown']])
+    if("import_library" %in% names(query)){
+      if (paste0(query[['import_library']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+          updateTextInput(session, "import_library_dropdown", value = query[['import_library']])
           e <- as.environment("package:DesignLibrary")
-          DD$design <- get(paste0(query[['import_library_dropdown']], "_designer"), e)
+          DD$design <- get(paste0(query[['import_library']], "_designer"), e)
           DD$precomputed <- TRUE
-          diagnosis <- readRDS(paste0("data/", query[['import_library_dropdown']], "_shiny_diagnosis.RDS"))
-          DD$diagnosis <- diagnosis$diagnosis
-          DD$args_code <- diagnosis$argument_list
+          DD$diagnosis <- readRDS(paste0("data/", query[['import_library']], "_shiny_diagnosis.RDS"))
+          # DD$diagnosis <- diagnosis$diagnosis
+          # DD$args_code <- diagnosis$argument_list
           session$sendCustomMessage(type = "closeModal", "#welcome_modal")
 
         message("loaded sidefile")

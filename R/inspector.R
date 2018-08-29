@@ -83,7 +83,7 @@ diagnostic_params <-       material_card(
 #'
 inspector.ui <- material_page(
   shinyjs::useShinyjs(),
-  shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }"),
+  shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }", functions = "refresh"),
   title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('

@@ -1,8 +1,10 @@
+library(DesignLibrary)
+library(ShinyDeclareDesign)
 
 functions <- ls("package:DesignLibrary")
 designers <- functions[grepl("_designer\\b",functions)]
-sims <- 100
-bootstraps <- 100
+sims <- 10
+bootstraps <- 10
 
 for(designer in designers){
 
@@ -23,7 +25,6 @@ for(designer in designers){
       update_existing = TRUE
     )
   }
+  print(designer)
 }
-
-
 

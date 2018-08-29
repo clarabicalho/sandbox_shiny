@@ -12,8 +12,7 @@ library(shinythemes)
 library(shinyBS)
 library(ggplot2)
 library(rlang)
-library(shinyjs)
-# library(V8)
+
 
 source("R/aaa_helpers.R")
 
@@ -109,10 +108,13 @@ inspector.ui <- material_page(
     material_column(
       width = 3,
       material_card("",
-                    div(style="display:inline-block;width:100%;text-align: center;", actionButton("refresh",
-                                                                                                 label = "RESET",
-                                                                                                 # onclick = "https://eos.wzb.eu/bicalho/DDinspector/",
-                                                                                                 icon = icon("refresh", lib = "glyphicon")))),
+                    div(style="text-align: center;", # display:inline-block;width:100%;
+                        actionButton("refresh",
+                                     label = HTML("Design Menu")#,
+                                     # onclick = "https://eos.wzb.eu/bicalho/DDinspector/",
+                                     # icon = icon("refresh", lib = "glyphicon")
+                                     ))
+                    ),
       uiOutput("designParameters")#,
       # uiOutput("plotParameters")
     ),
@@ -123,7 +125,7 @@ inspector.ui <- material_page(
                     uiOutput("descriptionPanel"),
                     uiOutput("citationPanel"),
                     p("Note: The results of the design diagnosis are obtained from 500 simulations of the design and 100 bootstrap simulations."),
-                    verbatimTextOutput("print"),
+                    # verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
@@ -156,7 +158,6 @@ inspector.server <- function(input, output, clientData, session) {
   library(shinyBS)
   library(stringr)
   library(shinymaterial)
-  library(shinyjs)
 
   # session$allowReconnect("force") #TODO
   observeEvent(input$refresh, {

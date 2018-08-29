@@ -160,7 +160,7 @@ inspector.server <- function(input, output, clientData, session) {
   library(shinymaterial)
   library(shinyjs)
 
-  # session$allowReconnect("force") #TODO
+  session$allowReconnect("force") #TODO
   observeEvent(input$refresh, {
     shinyjs::js$refresh()
   })

@@ -12,6 +12,8 @@ library(shinythemes)
 library(shinyBS)
 library(ggplot2)
 library(rlang)
+library(shinyjs)
+library(V8)
 
 source("R/aaa_helpers.R")
 
@@ -80,6 +82,8 @@ diagnostic_params <-       material_card(
 #'
 #'
 inspector.ui <- material_page(
+  shinyjs::useShinyjs(),
+  shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }"),
   title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('
@@ -107,9 +111,9 @@ inspector.ui <- material_page(
     material_column(
       width = 3,
       material_card("",
-                    div(style="display:inline-block;width:100%;text-align: center;",actionButton("reset",
+                    div(style="display:inline-block;width:100%;text-align: center;", actionButton("refresh",
                                                                                                  label = "RESET",
-                                                                                                 onclick = "https://eos.wzb.eu/ipi/DDinspector/",
+                                                                                                 # onclick = "https://eos.wzb.eu/bicalho/DDinspector/",
                                                                                                  icon = icon("refresh", lib = "glyphicon")))),
       uiOutput("designParameters")#,
       # uiOutput("plotParameters")
@@ -156,7 +160,9 @@ inspector.server <- function(input, output, clientData, session) {
   library(shinymaterial)
 
   # session$allowReconnect("force") #TODO
-
+  observeEvent(input$refresh, {
+    shinyjs::js$refresh()
+  })
 
   # create reactive values of DD --------------------------------------------
 

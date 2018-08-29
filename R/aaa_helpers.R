@@ -5,13 +5,13 @@
 #' @return Diagnosis
 #' @export
 #'
-get_or_run_diagnosis <- function(design,sims,bootstrap) {
+get_or_run_diagnosis <- function(design,sims,bootstrap_sims) {
   design_name <- substitute(design)
   file_name <- paste0(design_name,"_diagnosis.RDS")
   if(file.exists(file_name)){
     diagnosis <- readRDS(file = file_name)
   } else {
-    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap = bootstrap)
+    diagnosis <- DeclareDesign::diagnose_design(design,sims = sims,bootstrap_sims = bootstrap_sims)
     saveRDS(diagnosis, file_name)
   }
   diagnosis
@@ -58,32 +58,32 @@ expand_designer_shiny_args_text <- function(designer) {
 
 #' @export
 #'
-get_shiny_diagnosis <- function(designer,sims,bootstrap) {
+get_shiny_diagnosis <- function(designer,sims,bootstrap_sims) {
   shiny_args <- get_shiny_arguments(designer)
-  all_designs <- expand_design(template = designer,expand = TRUE,shiny_args)
-  diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap = bootstrap)
-  argument_list <- expand_designer_shiny_args_text(designer = designer)
-  return(list(diagnosis = diagnosis, argument_list = argument_list))
+  all_designs <- rlang::eval_bare(rlang::expr(expand_design(designer = designer, expand = TRUE, !!!shiny_args)))
+  diagnosis <- diagnose_design(all_designs,sims = sims,bootstrap_sims = bootstrap_sims)
+  # argument_list <- expand_designer_shiny_args_text(designer = designer)
+  return(diagnosis)
 }
 
 #' @export
 #'
-get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootstrap,update_existing=FALSE) {
+get_or_run_shiny_diagnosis <- function(designer,designer_name = NULL,sims,bootstrap_sims,update_existing=FALSE) {
   if(is.null(designer_name)) designer_name <- substitute(designer)
   design_name <- gsub(pattern = "_designer",replacement = "",x = designer_name)
   file_name <- paste0("data/",design_name,"_shiny_diagnosis.RDS")
   parameters <- expand.grid(get_shiny_arguments(designer), stringsAsFactors = FALSE)
   if(update_existing==FALSE & file.exists(file_name)){
-    diagnosis_list <- readRDS(file = file_name)
-    diagnosis <- diagnosis_list$diagnosis
+    diagnosis <- readRDS(file = file_name)
+    # diagnosis <- diagnosis_list
   } else {
-    diagnosis_list <- get_shiny_diagnosis(designer,sims = sims,bootstrap=bootstrap)
-    diagnosis <- diagnosis_list$diagnosis
-    rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_ID))
-    parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
-    diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
-    diagnosis_list$diagnosis <- diagnosis
-    saveRDS(diagnosis_list, file_name)
+    diagnosis <- get_shiny_diagnosis(designer,sims = sims,bootstrap_sims=bootstrap_sims)
+    # diagnosis <- diagnosis_list$diagnosis
+    # rows_perID <- as.data.frame(table(diagnosis$diagnosands$design_label))
+    # parameters <- parameters[rep(seq_len(nrow(parameters)), times = rows_perID$Freq),, drop = FALSE]
+    # diagnosis$diagnosands <- cbind(diagnosis$diagnosands,parameters)
+    # diagnosis_list$diagnosis <- diagnosis
+    saveRDS(diagnosis, file_name)
   }
   diagnosis
 }
@@ -95,13 +95,13 @@ nav_bar_color = " light-blue darken-3"
 ### actual helpers
 
 pretty_diagnoses <- function(df, digits=3){
-  ret <- df[intersect(c('design_ID', 'estimand_label', 'estimator_label'), names(df))]
+  ret <- df[intersect(c('design_label', 'estimand_label', 'estimator_label', 'term'), names(df))]
   names(ret) <- str_replace(str_to_title(names(ret)), "_.*", "")
 
   ids <- names(ret)
 
   data_columns <- names(df)
-  data_columns <- data_columns[grep('^se[(]|_label$|_ID$|coefficient$', data_columns, invert = TRUE)]
+  data_columns <- data_columns[grep('^se[(]|_label$|term$', data_columns, invert = TRUE)]
 
   myfmt <- sprintf('%%.%if', digits)
 
@@ -273,7 +273,7 @@ dd_theme <-
         strip.background = element_blank(),
         legend.position = "bottom",
         text = element_text(family = "Palatino", size=16)
-        )
+      )
   }
 
 

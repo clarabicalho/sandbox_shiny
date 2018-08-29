@@ -4,7 +4,7 @@
 \alias{get_or_run_diagnosis}
 \title{Run diagnosis and store RDS}
 \usage{
-get_or_run_diagnosis(design, sims, bootstrap)
+get_or_run_diagnosis(design, sims, bootstrap_sims)
 }
 \arguments{
 \item{...}{Design, number of simulations and bootstraps for DeclareDesign}

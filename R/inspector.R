@@ -121,7 +121,7 @@ inspector.ui <- material_page(
                     uiOutput("descriptionPanel"),
                     uiOutput("citationPanel"),
                     p("Note: The results of the design diagnosis are obtained from 500 simulations of the design and 100 bootstrap simulations."),
-                    # verbatimTextOutput("print"),
+                    verbatimTextOutput("print"),
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
@@ -394,7 +394,7 @@ inspector.server <- function(input, output, clientData, session) {
   #restrict to diagnosis for the parameters set in shiny `input`
   DD$shiny_args <- reactive({
     args <- list()#formals(DD$design)[-length(formals(DD$design))]
-    for(n in intersect(names(formals(DD$design)), sub("d_", "", names(input)))){
+    for(n in intersect(names(formals(DD$design)), sub("d_", "", names(input), ignore.case = FALSE))){
       args[[n]] <- as.numeric(input[[paste0("d_", n)]])
     }
     args
@@ -458,7 +458,7 @@ inspector.server <- function(input, output, clientData, session) {
 
 
 
-  output$print <- renderText(capture.output( input$coefficient ))
+  output$print <- renderText(capture.output(DD$shiny_args()))
 
 
   # observeEvent({

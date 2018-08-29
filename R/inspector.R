@@ -82,8 +82,6 @@ diagnostic_params <-       material_card(
 #'
 #'
 inspector.ui <- material_page(
-  shinyjs::useShinyjs(),
-  shinyjs::extendShinyjs(text = "shinyjs.refresh = function() { location.reload(); }", functions = "refresh"),
   title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('
@@ -162,7 +160,7 @@ inspector.server <- function(input, output, clientData, session) {
 
   # session$allowReconnect("force") #TODO
   observeEvent(input$refresh, {
-    shinyjs::js$refresh()
+    showModal(welcome)
   })
 
   # create reactive values of DD --------------------------------------------

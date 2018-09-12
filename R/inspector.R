@@ -35,9 +35,9 @@ welcome <- remove_close_button_from_modal(welcome)
 welcome[[2]][[1]] <- NULL# skip making outer button
 
 welcome[[3]] <-   shiny::tags$script("
-       $(document).ready(function(){
-        $('#welcome_modal').modal('open', {dismissible: false});
-       });")
+                                     $(document).ready(function(){
+                                     $('#welcome_modal').modal('open', {dismissible: false});
+                                     });")
 
 
 
@@ -84,12 +84,12 @@ inspector.ui <- material_page(
   title = "Declare Design Inspector",
   nav_bar_color = nav_bar_color,
   tags$script('
-    Shiny.addCustomMessageHandler("closeModal",
-          function(name) {
-            $(name).modal("close");
-          });
-    '),
-  shiny::tags$title("Declare Design Inspector"),
+              Shiny.addCustomMessageHandler("closeModal",
+              function(name) {
+              $(name).modal("close");
+              });
+              '),
+  shiny::tags$title("DeclareDesign Inspector"),
   # background_color = "blue lighten-4",
   # shiny::tags$h1("Page Content"),
   bootstrapLib(),
@@ -98,11 +98,11 @@ inspector.ui <- material_page(
 
   #TODO This is a super gross way of getting the tooltips to update correctly.
   refresh_tips <- shiny::tags$script("
-          setInterval(function(){
-                console.log('HIARYLAH');
-                $('.tooltipped').tooltip({delay: 50});
-          }, 10*1000);
-      "),
+                                     setInterval(function(){
+                                     console.log('HIARYLAH');
+                                     $('.tooltipped').tooltip({delay: 50});
+                                     }, 10*1000);
+                                     "),
   uiOutput("welcome"),
   material_row(
     material_column(
@@ -113,8 +113,8 @@ inspector.ui <- material_page(
                                      label = HTML("Design Menu")#,
                                      # onclick = "https://eos.wzb.eu/bicalho/DDinspector/",
                                      # icon = icon("refresh", lib = "glyphicon")
-                                     ))
-                    ),
+                        ))
+      ),
       uiOutput("designParameters")#,
       # uiOutput("plotParameters")
     ),
@@ -145,9 +145,9 @@ inspector.ui <- material_page(
     material_column(
       width = 3,
       uiOutput("plotParameters")
-      )
     )
   )
+)
 
 
 inspector.server <- function(input, output, clientData, session) {
@@ -211,47 +211,45 @@ inspector.server <- function(input, output, clientData, session) {
 
 
     #NOTE: Here is where we would need to change to take the vignette that is saved/exported by the function called on design (@Jasper)
-  #   if(DD$precomputed){
-  #     boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
-  #     boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
-  #     boxes[[length(boxes)+ 1]] <-  tags$script(
-  #       "$(document).on('change', 'select', function () {
-  #       Shiny.onInputChange('run', Math.random());
-  #       //Shiny.onInputChange('lastSelectName',name);
-  #       // to report changes on the same selectInput
-  #       //Shiny.onInputChange('lastSelect', Math.random());
-  #   });")
-  #     boxes[[length(boxes) + 1]] <- tags$script("
-  #                                               $(document).ready(function(){
-  #                                               // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
-  #                                               $('.modal').modal()
-  #                                               });"
-  #     )
-  #
-  # }
+    #   if(DD$precomputed){
+    #     boxes[[length(boxes)+ 1]] <- remove_close_button_from_modal(material_modal("vignette", "Vignette...", title = "", uiOutput("vignette")))
+    #     boxes[[length(boxes)]][[2]][[1]]$attribs$style = "display:inline"
+    #     boxes[[length(boxes)+ 1]] <-  tags$script(
+    #       "$(document).on('change', 'select', function () {
+    #       Shiny.onInputChange('run', Math.random());
+    #       //Shiny.onInputChange('lastSelectName',name);
+    #       // to report changes on the same selectInput
+    #       //Shiny.onInputChange('lastSelect', Math.random());
+    #   });")
+    #     boxes[[length(boxes) + 1]] <- tags$script("
+    #                                               $(document).ready(function(){
+    #                                               // the href attribute of the modal trigger must specify the modal ID that wants to be triggered
+    #                                               $('.modal').modal()
+    #                                               });"
+    #     )
+    #
+    # }
 
     boxes[[length(boxes) + 1]] <- downloadButton("download_design", "Export Design...")
 
 
     do.call(material_card, c(title="Design Parameters", boxes))
 
-})
+  })
+
+
 
   output$plotParameters <- renderUI({
-    design_fn <- req(DD$design)
-    v <- get_shiny_arguments(design_fn)
-    f <- names(v)
-    boxes <- list()
-
-    design_i <- req(DD$design_instance())
-    estimators <- unique(get_estimates(design_i)$estimator_label)
 
     # diagnosis <- DD$diagnosis_instance()
     # diagnosand_names <- diagnosis$diagnosand_names
+    design_fn <- req(DD$design)
+    f <- names(get_shiny_arguments(design_fn))
 
-    boxes[[1]] <- selectInput("estimator", "Estimator Label", choices = estimators)
+    boxes <- list()
+    boxes[[1]] <- uiOutput("estimator")
     boxes[[2]] <- uiOutput("coefficient")
-    boxes[[3]] <- selectInput("diag_param", "Diagnosand (y-axis)", choices = diagnosis_instance()$diagnosand_names)#, diagnosand_names, selected = diagnosand_names[1])
+    boxes[[3]] <- uiOutput("diag_param")#, diagnosand_names, selected = diagnosand_names[1])
     boxes[[4]] <- selectInput("x_param", "Main parameter (x-axis)",
                               choices = f)
     boxes[[5]] <- selectInput("opt_param", "Add layering parameter (optional)",
@@ -268,11 +266,20 @@ inspector.server <- function(input, output, clientData, session) {
     }
 
     do.call(material_card, c(title="Plot Parameters", boxes))
+  })
 
+  output$estimator <- renderUI({
+    design_i <- req(DD$design_instance())
+    selectInput("estimator", "Estimator Label", choices = unique(get_estimates(design_i)$estimator_label))
+  })
+
+  output$diag_param <- renderUI({
+    selectInput("diag_param", "Diagnosand (y-axis)", choices = DD$diagnosis$diagnosand_names)
   })
 
   observe(updateSelectInput(session, "opt_param",
                             choices = c("(none)", dplyr::setdiff(names(get_shiny_arguments(DD$design)), input$x_param))))
+
 
   output$coefficient <- renderUI({
     design_i <- req(DD$design_instance())
@@ -286,39 +293,47 @@ inspector.server <- function(input, output, clientData, session) {
   #REVIEW
   output$welcome <- renderUI({
     query <- parseQueryString(session$clientData$url_search)
-    if("file" %in% names(query)){
-      fname <- query[["file"]]
-      if(file.exists(fname)){
-        DD$design <- readRDS(fname)
+    if("import_library" %in% names(query)){
+      if (paste0(query[['import_library']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+        updateTextInput(session, "import_library_dropdown", value = query[['import_library']])
+        e <- as.environment("package:DesignLibrary")
+        DD$design <- get(paste0(query[['import_library']], "_designer"), e)
+        DD$precomputed <- TRUE
+        DD$diagnosis <- readRDS(paste0("data/", query[['import_library']], "_shiny_diagnosis.RDS"))
+        # DD$diagnosis <- diagnosis$diagnosis
+        # DD$args_code <- diagnosis$argument_list
+        session$sendCustomMessage(type = "closeModal", "#welcome_modal")
+
         message("loaded sidefile")
         return(shiny::tags$script("
                                   console.log('sidefile loaded')
                                   Shiny.onInputChange('import_button', 99999)
                                   "))
 
+      }else{
+        welcome
       }
-
-
+    }else{
+      welcome
     }
 
-    if("topic" %in% names(query)){
-      # fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
-      fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
-      if(file.exists(fname)) {
-        load(fname, envir = .GlobalEnv)
-        DD$precomputed <- TRUE
-        DD$design <- designer
-        message("loaded topic")
-        return(shiny::tags$script("
-                                  console.log('topic loaded')
-                                  Shiny.onInputChange('import_button', 99999)
-                                  "))
-      }
 
-      }
-
-    welcome
-    })
+    # if("topic" %in% names(query)){
+    #   # fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
+    #   fname <- file.path(getOption("design.library.path", "~/cache"), paste0(query$topic, ".Rdata"))
+    #   if(file.exists(fname)) {
+    #     load(fname, envir = .GlobalEnv)
+    #     DD$precomputed <- TRUE
+    #     DD$design <- designer
+    #     message("loaded topic")
+    #     return(shiny::tags$script("
+    #                               console.log('topic loaded')
+    #                               Shiny.onInputChange('import_button', 99999)
+    #                               "))
+    #   }
+    #
+    #   }
+  })
 
 
   output$diagnosticParameters <- renderUI({
@@ -397,6 +412,21 @@ inspector.server <- function(input, output, clientData, session) {
     # DD$args_code <- diagnosis$argument_list
   }, ignoreNULL=TRUE)
 
+  # observe({
+  #   query <- parseQueryString(session$clientData$url_search)
+  #   if (!is.null(query[['designer']])){
+  #     if (paste0(query[['designer']], "_designer") %in% ls(as.environment("package:DesignLibrary"))) {
+  #     # updateTextInput(session, "import_library_dropdown", value = query[['designer']])
+  #       e <- as.environment("package:DesignLibrary")
+  #       DD$design <- get(paste0(input$import_library_dropdown, "_designer"), e)
+  #       DD$precomputed <- TRUE
+  #       diagnosis <- readRDS(paste0("data/", input$import_library_dropdown, "_shiny_diagnosis.RDS"))
+  #       DD$diagnosis <- diagnosis$diagnosis
+  #       DD$args_code <- diagnosis$argument_list
+  #       session$sendCustomMessage(type = "closeModal", "#welcome_modal")
+  #   }}
+  # })
+
   #restrict to diagnosis for the parameters set in shiny `input`
   DD$shiny_args <- reactive({
     args <- list()#formals(DD$design)[-length(formals(DD$design))]
@@ -430,7 +460,7 @@ inspector.server <- function(input, output, clientData, session) {
   diagnosis_instance <- reactive({
     diag <- lapply(DD$diagnosis, function(o){
       if(is.data.frame(o)){
-      o <- o[o$design_label == paste0("design_", design_id()),]
+        o <- o[o$design_label == paste0("design_", design_id()),]
       }
       o
     })
@@ -697,9 +727,9 @@ inspector.server <- function(input, output, clientData, session) {
       code <- attr(DD$design_instance(), "code")
       paste(code, collapse = "\n")
     } else if(requireNamespace("pryr")){
-        code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$all_args())), collapse="\n")
-        gsub("[{]\n|\n[}]|[}]\n]", "", code) # remove surounding curly
-      }
+      code <- paste(deparse(pryr::substitute_q(body(DD$design), DD$all_args())), collapse="\n")
+      gsub("[{]\n|\n[}]|[}]\n]", "", code) # remove surounding curly
+    }
   })
 
   output$descriptionPanel <- renderUI(HTML(attr(DD$design, "description")))
@@ -751,11 +781,9 @@ inspector.server <- function(input, output, clientData, session) {
   #   HTML(vightml)
   # })
 
-    }
+}
 
 
 #' @export
 DDinspector <- shinyApp(inspector.ui, inspector.server)
-
-
 

@@ -12,6 +12,7 @@ library(shinythemes)
 library(shinyBS)
 library(ggplot2)
 library(rlang)
+library(DT)
 
 
 source("R/aaa_helpers.R")
@@ -129,7 +130,7 @@ inspector.ui <- material_page(
                     bsCollapse(id="outputCollapse", open="About",
                                # bsCollapsePanel("Citation", uiOutput("citationPanel")),
                                bsCollapsePanel("Summary", uiOutput("summaryPanel")),
-                               bsCollapsePanel("Diagnostics", tableOutput("diagnosticsPanel")),
+                               bsCollapsePanel("Diagnostics", DT::dataTableOutput("diagnosticsPanel")),
                                bsCollapsePanel("Diagnostic Plot", uiOutput("diagnosticPlot")),
                                bsCollapsePanel("Code", verbatimTextOutput("codePanel"),
                                                downloadButton("download_code", "Export Code...")),
@@ -540,11 +541,8 @@ inspector.server <- function(input, output, clientData, session) {
   #                                     bootstrap = as.numeric(input$d_draws))
   #   )
   #
-  #   # browser()
-  # }
-  #
 
-  output$diagnosticsPanel <-    renderTable({
+  output$diagnosticsPanel <-    DT::renderDataTable({
     # message(Sys.time(), "a")
     diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
     if(DD$precomputed){
@@ -557,7 +555,10 @@ inspector.server <- function(input, output, clientData, session) {
     # on.exit(message(Sys.time(), "c"))
     pretty_diagnoses(diag_tab)
     # as.data.frame(design_id())
-  }, spacing = "xs", striped = TRUE)
+  },
+  options = list(orderClasses = TRUE, pageLength = 10,
+                 scrollX = TRUE, width = 100,
+                 rownames = FALSE, dom = "fp"))
 
   # NOTE: need to index simulations dependent on parameters chosen in each input$d_`arg`.
   # create design_ID index

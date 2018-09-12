@@ -558,7 +558,7 @@ inspector.server <- function(input, output, clientData, session) {
   },
   options = list(orderClasses = TRUE, pageLength = 10,
                  scrollX = TRUE, width = 100,
-                 rownames = FALSE, dom = "fp"))
+                 rownames = FALSE, dom = "tlp"))
 
   # NOTE: need to index simulations dependent on parameters chosen in each input$d_`arg`.
   # create design_ID index

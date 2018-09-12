@@ -548,7 +548,7 @@ inspector.server <- function(input, output, clientData, session) {
     # message(Sys.time(), "a")
     diag_tab <- get_diagnosands(diagnosis = diagnosis_instance())
     if(DD$precomputed){
-      diag_tab <- dplyr::select(diag_tab, -design_label)
+      diag_tab <- dplyr::select(diag_tab, -design_label, -n_sims)
     }
     # rownames(diag_tab) <- diag_tab$estimand_label
     # diag_tab <- round_df(diag_tab, 4)
@@ -557,7 +557,7 @@ inspector.server <- function(input, output, clientData, session) {
     # on.exit(message(Sys.time(), "c"))
     pretty_diagnoses(diag_tab)
     # as.data.frame(design_id())
-  })
+  }, spacing = "xs", striped = TRUE)
 
   # NOTE: need to index simulations dependent on parameters chosen in each input$d_`arg`.
   # create design_ID index

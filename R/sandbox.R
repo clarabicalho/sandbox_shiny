@@ -1,4 +1,7 @@
 
+# Create pop-up for each of the arguments.
+
+
 library(DeclareDesign)
 library(shiny)
 library(shinymaterial)
@@ -6,22 +9,25 @@ library(shinythemes)
 library(shinyBS)
 library(ggplot2)
 library(rlang)
-library(DT)
+# library(DT)
 library(rlang)
-library(dplyr)
 library(plyr)
+library(dplyr)
+library(magrittr)
 
 source("R/sandbox_fns.R")
 info <- c("step_type", "label", "description", "expects")
 sandbox_df <- do.call(rbind.fill, lapply(sandbox, function(i)
   as.data.frame(t(unlist(sapply(info, function(a) attr(i, a)[1]))))))
 
+# step types in order of customary design
+sandbox_df$step_type <- factor(sandbox_df$step_type, levels = c("population", "sampling", "potential_outcomes",
+                                                                "assignment", "estimand", "estimator", "custom"))
+
+sandbox_df %<>% arrange(step_type)
+
 step_types <- as.character(sandbox_df[["step_type"]])
 step_choices <- as.character(sandbox_df[["description"]])
-
-# sandbox_df$step_type <- str_split_fixed(sandbox_df$step_type, "_", n = 2)[,1]
-
-# design <- population_1(10) + NULL
 
 sandbox.ui <- material_page(
   title = "DeclareDesign Sandbox",
@@ -112,7 +118,7 @@ sandbox.server <- function(input, output, session){
     do.call(material_card, c(title = "Steps", boxes))
   })
 
-    observe({
+  observe({
       updateSelectInput(session, "step_id_1", choices = step_choices[step_types == input[["type_id_1"]]])
       updateSelectInput(session, "step_id_2", choices = step_choices[step_types == input[["type_id_2"]]])
       updateSelectInput(session, "step_id_3", choices = step_choices[step_types == input[["type_id_3"]]])
@@ -139,9 +145,11 @@ sandbox.server <- function(input, output, session){
       names(step_inputs) <- formal_names
 
       if(length(formal_names)!=0){
-        design_code[[i]] <- paste0(steps_chosen()[i], " <- ", capture.output(do.call(f, exprs(!!!(step_inputs)))))
+        body <- capture.output(do.call(f, exprs(!!!(step_inputs))))
+        design_code[[i]] <- paste0(c(paste0(steps_chosen()[i], " <- "), rep("", length(body)-1)), body)
       }else{
-        design_code[[i]] <- paste0(steps_chosen()[i], " <- ", capture.output(rlang::expr(!!f)))
+        body <- capture.output(rlang::expr(!!f))
+        design_code[[i]] <- paste0(c(paste0(steps_chosen()[i], " <- "), rep("", length(body)-1)), body)
       }
     }
     design_code[[i+1]] <- paste0(paste0(input$design_name, " <- "), paste0(steps_chosen(), collapse = " + "))
@@ -149,9 +157,9 @@ sandbox.server <- function(input, output, session){
   })
 
   output$codePanel <- renderText(design_code())
+  # output$codePanel <- renderText(input$s1_param1)
 
 }
 
 shinyApp(sandbox.ui, sandbox.server)
-DesignLibrary:::construct_design_code(design, DesignLibrary:::match.call.defaults(), arguments_as_values = TRUE)
 
